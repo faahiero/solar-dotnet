@@ -1,0 +1,23 @@
+services:
+  - type: web
+    name: solar-lms
+    env: docker
+    dockerfilePath: ./Dockerfile
+    plan: free
+    region: oregon
+    envVars:
+      - key: ASPNETCORE_ENVIRONMENT
+        value: Production
+      - key: ConnectionStrings__DefaultConnection
+        fromDatabase:
+          name: solar-db
+          property: connectionString
+      - key: PORT
+        value: "8080"
+
+databases:
+  - name: solar-db
+    plan: free
+    databaseName: solar_development
+    user: solar
+    region: oregon
