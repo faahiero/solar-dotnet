@@ -1,0 +1,112 @@
+using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
+using Solar.Domain.Entities;
+
+namespace Solar.Application.Auth;
+
+public interface ISolarAuthDbContext
+{
+    DbSet<User> Users { get; }
+    Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
+}
+
+/// <summary>
+/// Caso de uso completo de autenticação do Solar LMS (.NET 10).
+/// Espelha o Devise LoginController original com suporte a Login por Username/CPF,
+/// validação de senhas legadas Devise (SHA1/MD5) e upgrade transparente para PBKDF2.
+/// </summary>
+public class AuthenticateUserUseCase
+{
+    private readonly ISolarAuthDbContext _dbContext;
+    private readonly IPasswordHasher<User> _passwordHasher;
+
+    public AuthenticateUserUseCase(
+        ISolarAuthDbContext dbContext,
+        IPasswordHasher<User> passwordHasher)
+    {
+        _dbContext = dbContext ?? throw new ArgumentNullException(nameof(dbContext));
+        _passwordHasher = passwordHasher ?? throw new ArgumentNullException(nameof(passwordHasher));
+    }
+
+    public async Task<LoginResponse> ExecuteAsync(LoginRequest request, CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(request);
+
+        if (string.IsNullOrWhiteSpace(request.Login) || string.IsNullOrWhiteSpace(request.Password))
+        {
+            return new LoginResponse
+            {
+                Success = false,
+                Message = "Usuário e senha são obrigatórios."
+            };
+        }
+
+        string rawLogin = request.Login.Trim().ToLowerInvariant();
+        string sanitizedCpf = rawLogin.Replace(".", "").Replace("-", "");
+
+        // 1. Busca por Username ou CPF (espelha Devise::LoginController:38)
+        var user = await _dbContext.Users
+            .FirstOrDefaultAsync(u =>
+                u.Username.ToLower() == rawLogin ||
+                (u.Cpf != null && (u.Cpf == rawLogin || u.Cpf == sanitizedCpf)),
+                cancellationToken);
+
+        if (user == null)
+        {
+            return new LoginResponse
+            {
+                Success = false,
+                Message = "Usuário ou senha inválidos."
+            };
+        }
+
+        // 2. Verificação de Senha Híbrida
+        var verificationResult = _passwordHasher.VerifyHashedPassword(user, user.EncryptedPassword, request.Password);
+
+        if (verificationResult == PasswordVerificationResult.Failed)
+        {
+            return new LoginResponse
+            {
+                Success = false,
+                Message = "Usuário ou senha inválidos."
+            };
+        }
+
+        bool rehashNeeded = verificationResult == PasswordVerificationResult.SuccessRehashNeeded;
+
+        // 3. Atualização transparente de hash para PBKDF2 se necessário
+        if (rehashNeeded)
+        {
+            user.EncryptedPassword = _passwordHasher.HashPassword(user, request.Password);
+            user.PasswordSalt = null; // Salt não é mais necessário com PBKDF2
+        }
+
+        // 4. Atualização de métricas de login do Devise
+        user.SignInCount++;
+        user.LastSignInAt = user.CurrentSignInAt;
+        user.CurrentSignInAt = DateTime.UtcNow;
+        user.LastSignInIp = user.CurrentSignInIp;
+        user.CurrentSignInIp = request.RemoteIp ?? "127.0.0.1";
+        user.SessionToken = Guid.NewGuid().ToString("N");
+        user.UpdatedAt = DateTime.UtcNow;
+
+        await _dbContext.SaveChangesAsync(cancellationToken);
+
+        return new LoginResponse
+        {
+            Success = true,
+            Message = "Autenticação realizada com sucesso.",
+            Token = user.SessionToken,
+            PasswordUpgraded = rehashNeeded,
+            User = new UserProfileDto
+            {
+                Id = user.Id,
+                Username = user.Username,
+                Name = user.Name,
+                Email = user.Email,
+                Cpf = user.Cpf,
+                ProfileTypes = 1 // Aluno
+            }
+        };
+    }
+}

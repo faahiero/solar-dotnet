@@ -1,0 +1,29 @@
+# Build and Visual Studio / Rider / VSCode artifacts
+**/bin/
+**/obj/
+**/.vs/
+**/.idea/
+**/*.user
+**/*.userosscache
+**/*.suo
+**/*.userprefs
+**/*.pidb
+**/*.booproj
+**/*.svclog
+
+# Node / React client artifacts
+**/node_modules/
+**/dist/
+**/dist-ssr/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+.vite/
+
+# Uploads and temporary data
+**/wwwroot/uploads/assignments/*
+!**/wwwroot/uploads/assignments/.gitkeep
+**/*.log
+.DS_Store
+Thumbs.db

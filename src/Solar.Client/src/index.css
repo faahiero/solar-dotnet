@@ -1,0 +1,1254 @@
+/* ==========================================================================
+   SOLAR LMS - IDENTIDADE VISUAL E LAYOUT RESPONSIVO OFICIAL (UFC / UFC VIRTUAL)
+   ========================================================================== */
+
+:root {
+  /* Cores Oficiais Solar LMS (Theme Blue) */
+  --solar-blue-dark: #003E7A;
+  --solar-blue-main: #204882;
+  --solar-blue-light: #285596;
+  --solar-blue-highlight: #91A9CC;
+  --solar-blue-subtle: #E8EFF6;
+  --solar-blue-card: #F5F8FB;
+  
+  /* Cores de Ação e Destaques */
+  --solar-yellow-start: #F0CF65;
+  --solar-yellow-end: #FFD242;
+  --solar-yellow-border: #AE8711;
+  --solar-yellow-text: #204882;
+  
+  /* Status e Alertas */
+  --solar-success: #00782D;
+  --solar-success-bg: #E8F5E9;
+  --solar-warning: #DCA727;
+  --solar-warning-bg: #FFF8E1;
+  --solar-error: #D5031C;
+  --solar-error-bg: #FFEBEE;
+  
+  /* Neutros e Superfícies */
+  --solar-body-bg: #E7EDED;
+  --solar-panel-bg: #ECEEF0;
+  --solar-border: #D0D0D0;
+  --solar-border-light: #E2E8F0;
+  --solar-text-main: #333333;
+  --solar-text-secondary: #555555;
+  --solar-text-muted: #888888;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: 'Plus Jakarta Sans', 'Open Sans', Arial, Helvetica, sans-serif;
+  background-color: var(--solar-body-bg);
+  color: var(--solar-text-main);
+  line-height: 1.5;
+  min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ==========================================================================
+   1. BARRA BRASIL (GOVERNO FEDERAL)
+   ========================================================================== */
+.bar-brasil-gov {
+  background-color: #004b82;
+  height: 34px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #ffffff;
+  font-size: 0.76rem;
+  width: 100%;
+}
+
+.bar-brasil-content {
+  width: 100%;
+  max-width: 1600px;
+  padding: 0 24px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.bar-brasil-gov a {
+  color: #ffffff;
+  text-decoration: none;
+}
+
+.gov-links-list {
+  display: flex;
+  list-style: none;
+  gap: 16px;
+}
+
+.gov-links-list a:hover {
+  text-decoration: underline;
+}
+
+/* ==========================================================================
+   2. TELA DE LOGIN OFICIAL (Espelha 01_tela_login.png)
+   ========================================================================== */
+.login-page-root {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background: linear-gradient(135deg, #204882 0%, #173868 60%, #0c2140 100%);
+  position: relative;
+}
+
+.login-central-wrapper {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 32px 16px;
+}
+
+.solar-brand-container {
+  text-align: center;
+  margin-bottom: 24px;
+}
+
+.solar-cursos-logo {
+  height: 64px;
+  filter: drop-shadow(0 3px 6px rgba(0, 0, 0, 0.4));
+}
+
+.solar-subtitle {
+  color: #ffffff;
+  font-size: 0.92rem;
+  font-weight: 500;
+  margin-top: 12px;
+  opacity: 0.95;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.6);
+}
+
+.login-form-card {
+  background: #ffffff;
+  border-radius: 6px;
+  width: 100%;
+  max-width: 380px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
+  overflow: hidden;
+}
+
+.login-tabs-header {
+  display: flex;
+  background: #d8dce2;
+  border-bottom: 1px solid var(--solar-border);
+}
+
+.login-tab-item {
+  flex: 1;
+  padding: 12px;
+  border: none;
+  background: #d8dce2;
+  font-family: inherit;
+  font-weight: 700;
+  font-size: 0.95rem;
+  color: var(--solar-blue-main);
+  cursor: pointer;
+  text-align: center;
+  transition: all 0.2s;
+}
+
+.login-tab-item.active {
+  background: #ffffff;
+  color: var(--solar-blue-dark);
+}
+
+.login-card-content {
+  padding: 26px 24px;
+}
+
+.login-field-box {
+  margin-bottom: 16px;
+}
+
+.solar-input-field {
+  width: 100%;
+  padding: 11px 14px;
+  border: 1px solid #b6b6b6;
+  border-radius: 4px;
+  font-family: inherit;
+  font-size: 0.92rem;
+  background: #f8f8f8;
+  color: #333;
+  transition: all 0.2s ease;
+}
+
+.solar-input-field:focus {
+  outline: none;
+  border-color: var(--solar-blue-main);
+  background: #ffffff;
+  box-shadow: 0 0 0 3px rgba(32, 72, 130, 0.18);
+}
+
+/* Botão Acessar Dourado Solar */
+.solar-btn-acessar {
+  width: 100%;
+  background: linear-gradient(to bottom, #f0cf65 0%, #ffd242 100%);
+  border: 1px solid #ae8711;
+  color: #204882;
+  font-weight: 800;
+  font-size: 1.02rem;
+  padding: 11px 18px;
+  border-radius: 4px;
+  cursor: pointer;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.15);
+  transition: filter 0.2s ease;
+  margin-top: 4px;
+}
+
+.solar-btn-acessar:hover {
+  filter: brightness(1.06);
+}
+
+.login-forgot-pwd {
+  text-align: center;
+  margin-top: 14px;
+}
+
+.login-forgot-pwd a {
+  color: var(--solar-blue-main);
+  font-size: 0.82rem;
+  text-decoration: none;
+  font-weight: 600;
+}
+
+.login-forgot-pwd a:hover {
+  text-decoration: underline;
+}
+
+.login-quick-demo {
+  margin-top: 18px;
+  padding-top: 14px;
+  border-top: 1px dashed var(--solar-border);
+  text-align: center;
+}
+
+.quick-chip {
+  background: #eef3f9;
+  border: 1px solid #c2d0e0;
+  color: var(--solar-blue-main);
+  font-size: 0.74rem;
+  font-weight: 700;
+  padding: 4px 10px;
+  border-radius: 4px;
+  cursor: pointer;
+  margin: 3px 4px;
+  transition: background 0.15s;
+}
+
+.quick-chip:hover {
+  background: #dbe6f5;
+}
+
+.login-flash-error {
+  background: var(--solar-error-bg);
+  border-left: 4px solid var(--solar-error);
+  color: var(--solar-error);
+  padding: 9px 12px;
+  font-size: 0.84rem;
+  font-weight: 600;
+  margin-bottom: 14px;
+}
+
+.login-institutional-logos {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 32px;
+  margin-top: 28px;
+  opacity: 0.92;
+}
+
+.login-bottom-nav {
+  display: flex;
+  gap: 20px;
+  margin-top: 30px;
+  font-size: 0.8rem;
+}
+
+.login-bottom-nav a {
+  color: #ffd242;
+  text-decoration: none;
+}
+
+.login-bottom-nav a:hover {
+  text-decoration: underline;
+}
+
+/* ==========================================================================
+   3. HEADER OFICIAL SOLAR LMS (Espelha 02_meu_solar_dashboard.png)
+   ========================================================================== */
+.solar-official-header {
+  background: #ffffff;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+  width: 100%;
+}
+
+.solar-topbar-blue {
+  background: #003E7A;
+  height: 48px;
+  padding: 0 24px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  color: #ffffff;
+}
+
+.solar-topbar-right {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  font-size: 0.85rem;
+}
+
+.user-nick-box {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.user-avatar-circle {
+  width: 26px;
+  height: 26px;
+  background: #ffffff;
+  color: #003E7A;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.85rem;
+}
+
+.user-nick-name {
+  font-weight: 700;
+  color: #ffffff;
+}
+
+.server-clock-text {
+  color: #c0d4ed;
+  font-size: 0.84rem;
+  font-family: 'JetBrains Mono', monospace;
+}
+
+.topbar-nav-link {
+  color: #ffffff;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.topbar-nav-link:hover {
+  text-decoration: underline;
+}
+
+.topbar-btn-sair {
+  background: none;
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  color: #ffffff;
+  padding: 4px 12px;
+  border-radius: 3px;
+  font-size: 0.8rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.topbar-btn-sair:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+/* Barra de Abas (Home | Turmas | Mensagens | Matrícula) */
+.solar-tabs-bar {
+  background: #ffffff;
+  border-bottom: 1px solid var(--solar-border);
+  padding: 0 24px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 42px;
+}
+
+.solar-tabs-group {
+  display: flex;
+  gap: 4px;
+  overflow-x: auto;
+}
+
+.solar-main-tab {
+  background: none;
+  border: none;
+  padding: 10px 18px;
+  font-family: inherit;
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: var(--solar-blue-main);
+  cursor: pointer;
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  white-space: nowrap;
+  transition: color 0.15s ease;
+}
+
+.solar-main-tab.active {
+  color: #f58220;
+  border-bottom: 3px solid #f58220;
+}
+
+.closable-tab {
+  background: #f1f4f8;
+  border-radius: 4px 4px 0 0;
+  padding: 8px 12px;
+}
+
+.closable-tab.active {
+  background: #ffffff;
+  border: 1px solid var(--solar-border);
+  border-bottom: 3px solid #f58220;
+}
+
+.close-tab-btn {
+  background: none;
+  border: none;
+  font-size: 0.8rem;
+  color: #888;
+  cursor: pointer;
+  margin-left: 6px;
+  padding: 2px 4px;
+}
+
+.close-tab-btn:hover {
+  color: var(--solar-error);
+}
+
+.solar-top-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.btn-shortcuts {
+  background: var(--solar-blue-main);
+  color: #ffffff;
+  border: none;
+  padding: 5px 12px;
+  border-radius: 3px;
+  font-size: 0.8rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.btn-icon-action {
+  background: #f1f3f5;
+  border: 1px solid var(--solar-border);
+  width: 28px;
+  height: 28px;
+  border-radius: 3px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 0.85rem;
+  transition: background 0.15s;
+}
+
+.btn-icon-action:hover {
+  background: #e2e8f0;
+}
+
+/* ==========================================================================
+   4. DASHBOARD / MEU SOLAR (Espelha 02_meu_solar_dashboard.png)
+   ========================================================================== */
+.solar-page-content {
+  width: 100%;
+  max-width: 1600px;
+  margin: 16px auto;
+  padding: 0 24px;
+}
+
+/* Flash Notice Verde */
+.solar-flash-success {
+  background: #ffffff;
+  border: 1px solid #4ade80;
+  border-radius: 4px;
+  padding: 8px 14px;
+  margin-bottom: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+}
+
+.flash-content {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.flash-check-icon {
+  background: #16a34a;
+  color: #ffffff;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.75rem;
+  font-weight: 800;
+}
+
+.flash-text-box {
+  border: 1px solid #16a34a;
+  padding: 3px 8px;
+  font-size: 0.88rem;
+  font-weight: 700;
+  color: #166534;
+  border-radius: 2px;
+}
+
+.flash-close-btn {
+  background: none;
+  border: none;
+  color: #666;
+  cursor: pointer;
+  font-size: 0.85rem;
+  padding: 4px;
+}
+
+/* Grid Layout: Disciplinas + Agenda */
+.mysolar-grid-layout {
+  display: grid;
+  grid-template-columns: 1fr 320px;
+  gap: 20px;
+  align-items: start;
+}
+
+@media (max-width: 960px) {
+  .mysolar-grid-layout {
+    grid-template-columns: 1fr;
+  }
+}
+
+.solar-portlet-card {
+  background: #ffffff;
+  border: 1px solid var(--solar-border);
+  border-radius: 4px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+  overflow: hidden;
+}
+
+.portlet-table-header {
+  padding: 10px 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid var(--solar-border);
+  background: #fafafa;
+}
+
+.portlet-title-left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.95rem;
+  color: var(--solar-blue-dark);
+}
+
+.portlet-actions-right {
+  display: flex;
+  gap: 14px;
+}
+
+.btn-action-text {
+  background: none;
+  border: none;
+  color: #555;
+  font-size: 0.82rem;
+  cursor: pointer;
+  font-weight: 500;
+}
+
+.btn-action-text:hover {
+  color: var(--solar-blue-main);
+  text-decoration: underline;
+}
+
+.solar-curriculum-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.solar-curriculum-table th {
+  background: #fdfdfd;
+  color: #444;
+  font-size: 0.82rem;
+  font-weight: 700;
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--solar-border);
+  text-align: left;
+}
+
+.solar-curriculum-table td {
+  padding: 12px 14px;
+  border-bottom: 1px solid #eee;
+  font-size: 0.88rem;
+  vertical-align: middle;
+}
+
+.curriculum-row {
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.curriculum-row:hover {
+  background: #e9f2fc;
+}
+
+.cu-name-cell {
+  color: var(--solar-blue-main);
+}
+
+.btn-enter-cu {
+  background: none;
+  border: none;
+  color: var(--solar-blue-main);
+  font-size: 1.1rem;
+  font-weight: 800;
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 4px;
+}
+
+.btn-enter-cu:hover {
+  background: #dbeafe;
+}
+
+/* Portlet Agenda */
+.agenda-card {
+  padding: 14px 16px;
+}
+
+.portlet-simple-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.95rem;
+  color: var(--solar-blue-dark);
+  border-bottom: 2px solid var(--solar-blue-main);
+  padding-bottom: 8px;
+  margin-bottom: 12px;
+}
+
+.calendar-month-selector {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 0.86rem;
+  margin-bottom: 10px;
+}
+
+.cal-arrow {
+  background: none;
+  border: none;
+  color: #666;
+  cursor: pointer;
+  font-size: 0.85rem;
+  padding: 2px 6px;
+}
+
+.mini-calendar-table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: center;
+  font-size: 0.82rem;
+}
+
+.mini-calendar-table th {
+  color: #666;
+  padding: 6px 2px;
+  font-weight: 700;
+}
+
+.calendar-day-cell {
+  padding: 6px 2px;
+  cursor: pointer;
+  border-radius: 2px;
+  transition: background 0.15s;
+}
+
+.calendar-day-cell:hover {
+  background: #e2e8f0;
+}
+
+.calendar-day-cell.has-event {
+  background: #4b6380;
+  color: #ffffff;
+  font-weight: 700;
+}
+
+.calendar-day-cell.selected-day {
+  border: 2px solid #ffd242;
+}
+
+.agenda-events-list {
+  margin-top: 14px;
+  border-top: 1px solid var(--solar-border-light);
+  padding-top: 10px;
+  font-size: 0.82rem;
+  color: #444;
+}
+
+.agenda-event-item {
+  margin-bottom: 6px;
+  line-height: 1.4;
+}
+
+.event-bullet {
+  color: var(--solar-blue-main);
+  font-weight: 800;
+}
+
+/* ==========================================================================
+   5. VISÃO DA DISCIPLINA / TURMA (Espelha 07_turma_disciplina_interna.png)
+   ========================================================================== */
+.curriculum-unit-container {
+  width: 100%;
+}
+
+.cu-breadcrumb-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 0.85rem;
+  background: #ffffff;
+  border: 1px solid var(--solar-border);
+  padding: 8px 16px;
+  border-radius: 4px;
+  margin-bottom: 12px;
+}
+
+.crumb-link {
+  color: var(--solar-blue-main);
+  cursor: pointer;
+  text-decoration: underline;
+  font-weight: 600;
+}
+
+.crumb-sep {
+  margin: 0 8px;
+  color: #888;
+}
+
+.crumb-current {
+  color: #333;
+  font-weight: 500;
+}
+
+.crumb-sub {
+  color: #d97706;
+  font-weight: 700;
+}
+
+.cu-class-code {
+  font-size: 0.82rem;
+  color: #555;
+}
+
+.cu-main-title {
+  font-size: 1.35rem;
+  font-weight: 700;
+  color: var(--solar-blue-dark);
+  margin-bottom: 16px;
+}
+
+.cu-content-grid {
+  display: grid;
+  grid-template-columns: 220px 1fr;
+  gap: 20px;
+  align-items: start;
+}
+
+@media (max-width: 860px) {
+  .cu-content-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Sidebar da Disciplina */
+.cu-sidebar-menu {
+  background: #ffffff;
+  border: 1px solid var(--solar-border);
+  border-radius: 4px;
+  padding: 8px 0;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.cu-menu-item {
+  padding: 9px 16px;
+  font-size: 0.88rem;
+  font-weight: 700;
+  color: var(--solar-blue-main);
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.cu-menu-item.active, .cu-menu-subitem.active {
+  background: #fff8e1;
+  color: #b45309;
+  font-weight: 700;
+  border-left: 3px solid #f59e0b;
+}
+
+.cu-menu-category-header {
+  font-size: 0.78rem;
+  font-weight: 800;
+  color: var(--solar-blue-dark);
+  padding: 10px 16px 4px 16px;
+  border-bottom: 1px solid var(--solar-border-light);
+  margin-top: 6px;
+}
+
+.cu-menu-subitem {
+  padding: 7px 16px 7px 24px;
+  font-size: 0.85rem;
+  color: #444;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.cu-menu-subitem:hover, .cu-menu-item:hover {
+  background: #f1f5f9;
+}
+
+/* Painéis Brancos Internos da Turma */
+.cu-portlet-white {
+  background: #ffffff;
+  border: 1px solid var(--solar-border);
+  border-radius: 4px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  overflow: hidden;
+}
+
+.cu-block-header-line {
+  background: #fdfdfd;
+  border-bottom: 2px solid var(--solar-blue-main);
+  padding: 10px 16px;
+  font-size: 0.95rem;
+  color: var(--solar-blue-dark);
+  display: flex;
+  align-items: center;
+}
+
+.cu-two-columns {
+  display: grid;
+  grid-template-columns: 1fr 340px;
+  gap: 24px;
+  padding: 18px 20px;
+}
+
+@media (max-width: 900px) {
+  .cu-two-columns {
+    grid-template-columns: 1fr;
+  }
+}
+
+.cu-block-title {
+  font-size: 0.98rem;
+  color: var(--solar-blue-dark);
+  border-bottom: 2px solid var(--solar-blue-main);
+  padding-bottom: 4px;
+  margin-bottom: 10px;
+}
+
+.staff-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 0.85rem;
+  padding: 6px 0;
+  border-bottom: 1px dashed #f0f0f0;
+}
+
+.staff-email-icon {
+  text-decoration: none;
+  font-size: 0.95rem;
+  padding: 2px 6px;
+  border-radius: 3px;
+}
+
+.staff-email-icon:hover {
+  background: #e2e8f0;
+}
+
+/* 3 Colunas Inferiores da Turma */
+.cu-bottom-three-cols {
+  display: grid;
+  grid-template-columns: 1fr 1fr 300px;
+  gap: 16px;
+  align-items: stretch;
+}
+
+@media (max-width: 960px) {
+  .cu-bottom-three-cols {
+    grid-template-columns: 1fr;
+  }
+}
+
+.cu-portlet-white.bottom-col {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.bottom-col-content {
+  padding: 14px 16px;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.forum-snippet-item {
+  font-size: 0.84rem;
+  line-height: 1.5;
+}
+
+.snippet-date {
+  color: #888;
+  font-size: 0.78rem;
+}
+
+.snippet-author {
+  color: #d97706;
+}
+
+/* Tabelas Genéricas */
+.solar-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.solar-table th {
+  background: #fdfdfd;
+  color: var(--solar-blue-dark);
+  font-size: 0.82rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  padding: 10px 14px;
+  border: 1px solid var(--solar-border);
+  text-align: left;
+}
+
+.solar-table td {
+  padding: 11px 14px;
+  border: 1px solid var(--solar-border);
+  font-size: 0.88rem;
+  vertical-align: middle;
+}
+
+.solar-table tr:nth-child(even) {
+  background-color: #fafbfc;
+}
+
+.solar-table tr:hover {
+  background-color: #eaf3fd;
+}
+
+/* Diário de Notas do Aluno */
+.score-student-card {
+  display: flex;
+  gap: 20px;
+  background: #f8fafc;
+  border: 1px solid var(--solar-border);
+  border-radius: 4px;
+  padding: 20px;
+  align-items: center;
+}
+
+.student-avatar-big {
+  width: 68px;
+  height: 68px;
+  border-radius: 50%;
+  background: #e2e8f0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 2.2rem;
+}
+
+.student-score-summary-box {
+  display: flex;
+  gap: 24px;
+  margin-left: auto;
+  text-align: center;
+}
+
+.score-metric {
+  display: flex;
+  flex-direction: column;
+}
+
+.metric-label {
+  font-size: 0.78rem;
+  color: #666;
+}
+
+.metric-val {
+  font-size: 1.15rem;
+  font-weight: 700;
+}
+
+.score-filter-tabs {
+  display: flex;
+  gap: 6px;
+  margin-top: 20px;
+  border-bottom: 2px solid var(--solar-blue-main);
+}
+
+.score-tab-btn {
+  background: #e2e8f0;
+  border: none;
+  padding: 8px 18px;
+  font-family: inherit;
+  font-weight: 700;
+  font-size: 0.85rem;
+  color: #475569;
+  cursor: pointer;
+  border-radius: 4px 4px 0 0;
+}
+
+.score-tab-btn.active {
+  background: var(--solar-blue-main);
+  color: #ffffff;
+}
+
+/* ==========================================================================
+   6. MENSAGENS / CORREIO (Espelha 03_mensagens_correio.png)
+   ========================================================================== */
+.messages-folder-tabs {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.msg-folder-btn {
+  background: #f1f5f9;
+  border: 1px solid var(--solar-border);
+  padding: 8px 18px;
+  border-radius: 4px;
+  font-family: inherit;
+  font-weight: 700;
+  font-size: 0.88rem;
+  color: #444;
+  cursor: pointer;
+}
+
+.msg-folder-btn.active {
+  background: var(--solar-blue-main);
+  color: #ffffff;
+  border-color: var(--solar-blue-main);
+}
+
+.messages-filter-action-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  background: #f8fafc;
+  border: 1px solid var(--solar-border);
+  padding: 10px 14px;
+  border-radius: 4px;
+  flex-wrap: wrap;
+}
+
+.msg-search-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 1;
+}
+
+.msg-select-filter {
+  padding: 6px 10px;
+  border: 1px solid var(--solar-border);
+  font-size: 0.85rem;
+  border-radius: 4px;
+  background: #ffffff;
+}
+
+.msg-input-search {
+  padding: 6px 12px;
+  border: 1px solid var(--solar-border);
+  font-size: 0.85rem;
+  border-radius: 4px;
+  flex: 1;
+  min-width: 160px;
+}
+
+.msg-btn-search {
+  background: #e2e8f0;
+  border: 1px solid var(--solar-border);
+  padding: 6px 12px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.85rem;
+}
+
+.msg-actions-group {
+  display: flex;
+  gap: 6px;
+}
+
+.btn-msg-icon-action {
+  background: #f1f3f5;
+  border: 1px solid var(--solar-border);
+  padding: 6px 10px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.88rem;
+}
+
+.btn-add-msg {
+  background: var(--solar-blue-main);
+  color: #ffffff;
+  font-weight: 700;
+  font-size: 0.82rem;
+  padding: 6px 14px;
+}
+
+.btn-add-msg:hover {
+  background: #173868;
+}
+
+/* ==========================================================================
+   7. WIDGET FLUTUANTE VLIBRAS E RODAPÉ OFICIAL
+   ========================================================================== */
+.vlibras-badge {
+  position: fixed;
+  right: 14px;
+  top: 45%;
+  background: #1d70b8;
+  color: #ffffff;
+  padding: 8px 12px;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+  z-index: 9999;
+  cursor: pointer;
+}
+
+.vlibras-hand-icon {
+  background: #ffffff;
+  color: #1d70b8;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.9rem;
+}
+
+.solar-official-footer {
+  background: #eceef0;
+  border-top: 1px solid var(--solar-border);
+  padding: 18px 24px;
+  margin-top: 48px;
+  text-align: center;
+  font-size: 0.82rem;
+}
+
+.footer-links-row {
+  display: flex;
+  justify-content: center;
+  gap: 24px;
+}
+
+.footer-links-row a {
+  color: #475569;
+  text-decoration: none;
+}
+
+.footer-links-row a:hover {
+  text-decoration: underline;
+}
+
+/* Modais Popups */
+.solar-modal-backdrop {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.55);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10000;
+}
+
+.solar-modal-card {
+  background: #ffffff;
+  border-radius: 6px;
+  width: 100%;
+  max-width: 520px;
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.35);
+  overflow: hidden;
+}
+
+.solar-modal-header {
+  background: var(--solar-blue-main);
+  color: #ffffff;
+  padding: 12px 18px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.95rem;
+}
+
+/* Botões Genéricos */
+.btn-solar-blue {
+  background: linear-gradient(to bottom, #285596 0%, #204882 100%);
+  border: 1px solid #143564;
+  color: #ffffff;
+  font-weight: 700;
+  font-size: 0.88rem;
+  padding: 8px 16px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background 0.2s ease;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+
+.btn-solar-blue:hover {
+  background: #173868;
+}
+
+.btn-solar-secondary {
+  background: #f1f3f5;
+  border: 1px solid var(--solar-border);
+  color: var(--solar-text-main);
+  font-weight: 600;
+  font-size: 0.85rem;
+  padding: 8px 14px;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.btn-solar-secondary:hover {
+  background: #e2e6ea;
+}

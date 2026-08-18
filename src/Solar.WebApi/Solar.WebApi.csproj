@@ -1,0 +1,19 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="10.0.11" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Solar.Application\Solar.Application.csproj" />
+    <ProjectReference Include="..\Solar.Infrastructure\Solar.Infrastructure.csproj" />
+    <ProjectReference Include="..\Solar.Domain\Solar.Domain.csproj" />
+  </ItemGroup>
+
+</Project>
