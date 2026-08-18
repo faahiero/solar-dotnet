@@ -127,15 +127,26 @@ app.UseMiddleware<ExamLockoutMiddleware>();
 // Endpoints da API (Minimal APIs)
 // ----------------------------------------------------
 
-// Health Check
-app.MapGet("/health", () => Results.Ok(new
+// Health Check com verificação de banco de dados
+app.MapGet("/health", async (SolarDbContext db) =>
 {
-    Status = "Healthy",
-    System = "Solar LMS Core (.NET 10)",
-    Timestamp = DateTime.UtcNow
-}))
+    bool dbOk = false;
+    try
+    {
+        dbOk = await db.Database.CanConnectAsync();
+    }
+    catch { }
+
+    return Results.Ok(new
+    {
+        Status = dbOk ? "Healthy" : "Degraded",
+        Database = dbOk ? "Connected" : "Disconnected",
+        System = "Solar LMS Core (.NET 10)",
+        Timestamp = DateTime.UtcNow
+    });
+})
 .WithName("HealthCheck")
-.WithSummary("Verifica a integridade do serviço");
+.WithSummary("Verifica a integridade do serviço e do banco de dados");
 
 // Autenticação com suporte aos hashes legados Devise (SHA1 / SHA1-MD5 e busca por Username/CPF)
 app.MapPost("/api/v1/auth/login", async (
@@ -855,6 +866,9 @@ app.MapPost("/api/v1/curriculum-units/{id}/exams/{examId}/submit", (
 
 // Mapeamento do Hub SignalR de Chat
 app.MapHub<ChatHub>("/hubs/chat");
+
+// Suporte a rotas profundas do SPA React (evita 404 ao recarregar a página)
+app.MapFallbackToFile("index.html");
 
 app.Run();
 

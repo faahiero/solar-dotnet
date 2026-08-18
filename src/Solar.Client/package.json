@@ -5,8 +5,9 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "watch": "vite build --watch",
     "build": "tsc -b && vite build",
-    "build:sync": "tsc -b && vite build && cp -rf dist/* ../Solar.WebApi/wwwroot/",
+    "build:sync": "tsc -b && vite build",
     "lint": "oxlint",
     "preview": "vite preview"
   },
