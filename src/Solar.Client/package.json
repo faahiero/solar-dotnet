@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
+    "build:sync": "tsc -b && vite build && cp -rf dist/* ../Solar.WebApi/wwwroot/",
     "lint": "oxlint",
     "preview": "vite preview"
   },
