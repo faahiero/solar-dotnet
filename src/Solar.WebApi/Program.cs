@@ -22,8 +22,9 @@ var builder = WebApplication.CreateBuilder(args);
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
 if (!string.IsNullOrEmpty(connectionString) && !builder.Environment.IsEnvironment("Testing"))
 {
+    var formattedConn = FormatNpgsqlConnectionString(connectionString);
     builder.Services.AddDbContext<SolarDbContext>(options =>
-        options.UseNpgsql(connectionString));
+        options.UseNpgsql(formattedConn));
 }
 else
 {
@@ -886,4 +887,30 @@ public record SendMessageRequest(string Recipient, string Subject, string Body);
 public record ExamSubmissionRequest(Dictionary<int, int> Answers);
 
 // Necessário para Testes de Integração com WebApplicationFactory
-public partial class Program { }
+public partial class Program
+{
+    public static string FormatNpgsqlConnectionString(string connStr)
+    {
+        if (string.IsNullOrWhiteSpace(connStr)) return connStr;
+        if (connStr.StartsWith("postgres://", StringComparison.OrdinalIgnoreCase) ||
+            connStr.StartsWith("postgresql://", StringComparison.OrdinalIgnoreCase))
+        {
+            try
+            {
+                var uri = new Uri(connStr);
+                var userInfo = uri.UserInfo.Split(':');
+                var username = Uri.UnescapeDataString(userInfo[0]);
+                var password = userInfo.Length > 1 ? Uri.UnescapeDataString(userInfo[1]) : "";
+                var host = uri.Host;
+                var port = uri.Port > 0 ? uri.Port : 5432;
+                var database = uri.AbsolutePath.TrimStart('/');
+                return $"Host={host};Port={port};Database={database};Username={username};Password={password};SSL Mode=Require;Trust Server Certificate=true;";
+            }
+            catch
+            {
+                return connStr;
+            }
+        }
+        return connStr;
+    }
+}
