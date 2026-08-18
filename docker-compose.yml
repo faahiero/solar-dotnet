@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   solar-web:
     build:
@@ -48,7 +46,7 @@ services:
     container_name: solar-lms-redis
     restart: unless-stopped
     ports:
-      - "6379:6379"
+      - "6380:6379"
     volumes:
       - redis-data:/data
     networks:
