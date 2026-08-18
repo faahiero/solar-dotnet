@@ -48,4 +48,4 @@ jobs:
             --collect:"XPlat Code Coverage"
 
       - name: Security Vulnerability Scan (NuGet)
-        run: dotnet list package --vulnerable --include-transitive
+        run: dotnet list Solar.sln package --vulnerable --include-transitive
