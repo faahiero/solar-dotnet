@@ -14,6 +14,7 @@ using Solar.Infrastructure.Integrations.Sigaa;
 using Solar.Infrastructure.Persistence;
 using Solar.WebApi.Hubs;
 using Solar.WebApi.Middlewares;
+using Scalar.AspNetCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -110,9 +111,17 @@ using (var scope = app.Services.CreateScope())
     }
 }
 
+// OpenAPI e Documentação Interativa de Rotas (Swagger / Scalar)
+app.MapOpenApi();
+app.MapScalarApiReference(options =>
+{
+    options.WithTitle("Solar LMS 2.0 API - UFC Virtual");
+    options.WithTheme(ScalarTheme.BluePlanet);
+});
+app.MapGet("/swagger", () => Results.Redirect("/scalar/v1")).ExcludeFromDescription();
+
 if (app.Environment.IsDevelopment())
 {
-    app.MapOpenApi();
     app.UseHttpsRedirection();
 }
 
