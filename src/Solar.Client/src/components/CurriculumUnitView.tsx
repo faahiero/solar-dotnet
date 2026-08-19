@@ -49,6 +49,44 @@ export const CurriculumUnitView = ({
   const [uploadFeedback, setUploadFeedback] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
+  const isTeacher = user.profileTypes === 4 || user.username.startsWith('prof');
+
+  const [classGrades, setClassGrades] = useState([
+    { studentId: 1, name: 'Aluno 1 (Demonstração)', p1: 8.0, p2: 7.5, af: '', hours: 56, finalGrade: 7.8, situation: 'Aprovado' },
+    { studentId: 2, name: 'Aluno Demonstrativo', p1: 5.0, p2: 4.5, af: 6.0, hours: 50, finalGrade: 5.4, situation: 'Aprovado na AF' },
+    { studentId: 3, name: 'Carlos Eduardo Santos', p1: 9.0, p2: 8.5, af: '', hours: 64, finalGrade: 8.8, situation: 'Aprovado' },
+    { studentId: 4, name: 'Juliana Mendes Lima', p1: 3.5, p2: 4.0, af: 3.0, hours: 40, finalGrade: 3.6, situation: 'Reprovado por Nota' },
+  ]);
+  const [savingGrades, setSavingGrades] = useState(false);
+  const [saveFeedback, setSaveFeedback] = useState<string | null>(null);
+
+  const handleSaveTeacherGrades = async () => {
+    setSavingGrades(true);
+    setSaveFeedback(null);
+    try {
+      const payload = {
+        grades: classGrades.map(g => ({
+          studentId: g.studentId,
+          partialGrade: (Number(g.p1) + Number(g.p2)) / 2,
+          finalExamGrade: g.af !== '' ? Number(g.af) : null,
+          frequencyHours: Number(g.hours)
+        }))
+      };
+      const res = await fetch(`/api/v1/curriculum-units/${curriculumUnit.id}/scores/bulk-update`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+      if (res.ok) {
+        setSaveFeedback('✔ Notas e frequências da turma salvas e recalculadas com sucesso no sistema!');
+      }
+    } catch (err) {
+      setSaveFeedback('Erro ao salvar notas: ' + err);
+    } finally {
+      setSavingGrades(false);
+    }
+  };
+
   useEffect(() => {
     fetch(`/api/v1/curriculum-units/${curriculumUnit.id}`)
       .then((res) => res.json())
@@ -335,6 +373,33 @@ export const CurriculumUnitView = ({
                 <strong>Módulos Didáticos e Aulas da Disciplina</strong>
               </div>
               <div style={{ padding: '16px' }}>
+                {isTeacher && (
+                  <div style={{ marginBottom: '16px', display: 'flex', gap: '8px' }}>
+                    <button
+                      type="button"
+                      className="btn-solar-blue"
+                      onClick={() => {
+                        const title = prompt('Informe o título da nova aula:');
+                        if (title) {
+                          fetch(`/api/v1/curriculum-units/${curriculumUnit.id}/lessons`, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ title, moduleName: 'Módulo 1' })
+                          }).then(() => {
+                            alert('Aula cadastrada com sucesso!');
+                            setLessons(prev => [
+                              ...prev,
+                              { moduleId: 99, moduleName: 'Novas Aulas', lessons: [{ id: Date.now(), title, type: 'Pacote Interativo (ZIP)', viewed: false, notesCount: 0 }] }
+                            ]);
+                          });
+                        }
+                      }}
+                      style={{ fontSize: '0.85rem' }}
+                    >
+                      ➕ Nova Aula / Módulo Didático
+                    </button>
+                  </div>
+                )}
                 {lessons.map((mod) => (
                   <div key={mod.moduleId} style={{ marginBottom: '20px' }}>
                     <h3 style={{ fontSize: '0.95rem', color: 'var(--solar-blue-dark)', marginBottom: '8px', borderBottom: '1px solid #ddd', paddingBottom: '4px' }}>
@@ -416,6 +481,34 @@ export const CurriculumUnitView = ({
                 <strong>Fóruns Disponíveis</strong>
               </div>
               <div style={{ padding: '16px' }}>
+                {isTeacher && (
+                  <div style={{ marginBottom: '16px', display: 'flex', gap: '8px' }}>
+                    <button
+                      type="button"
+                      className="btn-solar-blue"
+                      onClick={() => {
+                        const title = prompt('Título do novo fórum:');
+                        if (title) {
+                          const desc = prompt('Descrição/Ementa da discussão:') || 'Discussão temática.';
+                          fetch(`/api/v1/curriculum-units/${curriculumUnit.id}/discussions`, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ title, description: desc, isEvaluative: true })
+                          }).then(() => {
+                            alert('Fórum criado com sucesso!');
+                            setDiscussions(prev => [
+                              ...prev,
+                              { id: Date.now(), title, description: desc, period: '01/08/2026 - 15/12/2026', postsCount: 0, status: 'Iniciado', isEvaluative: true, isFrequency: true }
+                            ]);
+                          });
+                        }
+                      }}
+                      style={{ fontSize: '0.85rem' }}
+                    >
+                      ➕ Novo Fórum Temático
+                    </button>
+                  </div>
+                )}
                 <table className="solar-table">
                   <thead>
                     <tr>
@@ -465,6 +558,34 @@ export const CurriculumUnitView = ({
                 <strong>Trabalhos e Portfólio Avaliativo</strong>
               </div>
               <div style={{ padding: '16px' }}>
+                {isTeacher && (
+                  <div style={{ marginBottom: '16px', display: 'flex', gap: '8px' }}>
+                    <button
+                      type="button"
+                      className="btn-solar-blue"
+                      onClick={() => {
+                        const title = prompt('Título do novo trabalho avaliativo:');
+                        if (title) {
+                          const deadline = prompt('Data de entrega (DD/MM/AAAA):') || '15/12/2026';
+                          fetch(`/api/v1/curriculum-units/${curriculumUnit.id}/assignments`, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ title, type: 'Individual', maxGroupMembers: 1, weight: 1.0, deadline })
+                          }).then(() => {
+                            alert('Trabalho cadastrado com sucesso!');
+                            setAssignments(prev => [
+                              ...prev,
+                              { id: Date.now(), title, type: 'Individual', maxGroupMembers: 1, deadline, status: 'Pendente' }
+                            ]);
+                          });
+                        }
+                      }}
+                      style={{ fontSize: '0.85rem' }}
+                    >
+                      ➕ Novo Trabalho Avaliativo
+                    </button>
+                  </div>
+                )}
                 {uploadFeedback && (
                   <div style={{ background: '#f0fdf4', border: '1px solid #86efac', color: '#166534', padding: '10px 14px', borderRadius: '4px', marginBottom: '16px', fontWeight: 600, fontSize: '0.88rem' }}>
                     {uploadFeedback}
@@ -634,6 +755,28 @@ export const CurriculumUnitView = ({
                   </tbody>
                 </table>
 
+                {/* Ações de Exportação Oficial em PDF */}
+                <div style={{ display: 'flex', gap: '10px', marginTop: '16px', marginBottom: '16px', flexWrap: 'wrap' }}>
+                  <a
+                    href={`/api/v1/curriculum-units/${curriculumUnit.id}/reports/grades-pdf`}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="btn-solar-blue"
+                    style={{ textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '0.85rem' }}
+                  >
+                    📄 Exportar Pauta Oficial de Notas (PDF)
+                  </a>
+                  <a
+                    href={`/api/v1/curriculum-units/${curriculumUnit.id}/reports/attendance-pdf`}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="btn-solar-blue"
+                    style={{ textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '0.85rem', background: '#1e40af' }}
+                  >
+                    📋 Exportar Pauta de Frequência (PDF)
+                  </a>
+                </div>
+
                 {/* Histórico de Acessos */}
                 <div style={{ marginTop: '24px' }}>
                   <h3 style={{ fontSize: '0.92rem', color: 'var(--solar-blue-dark)', marginBottom: '8px' }}>
@@ -656,6 +799,130 @@ export const CurriculumUnitView = ({
                     </tbody>
                   </table>
                 </div>
+
+                {/* Se for Professor, exibe o Diário de Classe Geral da Turma com Lançamento e Publicação de Notas */}
+                {isTeacher && (
+                  <div style={{ marginTop: '28px', background: '#f8fafc', border: '1px solid #cbd5e1', borderRadius: '6px', padding: '16px' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px', flexWrap: 'wrap', gap: '8px' }}>
+                      <div>
+                        <h3 style={{ fontSize: '1rem', color: '#1e293b', margin: 0 }}>
+                          👨‍🏫 Diário de Classe da Turma (Lançamento e Publicação de Notas)
+                        </h3>
+                        <p style={{ fontSize: '0.8rem', color: '#64748b', margin: '2px 0 0 0' }}>
+                          Altere as notas e frequências dos alunos e clique em Salvar para recalcular a situação de todos.
+                        </p>
+                      </div>
+                      <button
+                        type="button"
+                        className="btn-solar-blue"
+                        onClick={handleSaveTeacherGrades}
+                        disabled={savingGrades}
+                        style={{ fontSize: '0.85rem' }}
+                      >
+                        {savingGrades ? 'Salvando...' : '💾 Salvar e Publicar Notas'}
+                      </button>
+                    </div>
+
+                    {saveFeedback && (
+                      <div style={{ marginBottom: '12px', padding: '8px 12px', background: '#dcfce7', color: '#166534', borderRadius: '4px', fontSize: '0.85rem' }}>
+                        {saveFeedback}
+                      </div>
+                    )}
+
+                    <table className="solar-table">
+                      <thead>
+                        <tr>
+                          <th>Aluno</th>
+                          <th>Nota P1 (40%)</th>
+                          <th>Nota P2 (60%)</th>
+                          <th>Nota A.F.</th>
+                          <th>Freq. (Horas)</th>
+                          <th>Média Final</th>
+                          <th>Situação</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {classGrades.map((g, idx) => (
+                          <tr key={g.studentId}>
+                            <td><strong>{g.name}</strong></td>
+                            <td>
+                              <input
+                                type="number"
+                                step="0.1"
+                                min="0"
+                                max="10"
+                                value={g.p1}
+                                onChange={(e) => {
+                                  const val = parseFloat(e.target.value) || 0;
+                                  setClassGrades(prev => prev.map((item, i) => i === idx ? { ...item, p1: val } : item));
+                                }}
+                                style={{ width: '60px', padding: '2px 4px', fontSize: '0.85rem' }}
+                              />
+                            </td>
+                            <td>
+                              <input
+                                type="number"
+                                step="0.1"
+                                min="0"
+                                max="10"
+                                value={g.p2}
+                                onChange={(e) => {
+                                  const val = parseFloat(e.target.value) || 0;
+                                  setClassGrades(prev => prev.map((item, i) => i === idx ? { ...item, p2: val } : item));
+                                }}
+                                style={{ width: '60px', padding: '2px 4px', fontSize: '0.85rem' }}
+                              />
+                            </td>
+                            <td>
+                              <input
+                                type="number"
+                                step="0.1"
+                                min="0"
+                                max="10"
+                                placeholder="-"
+                                value={g.af}
+                                onChange={(e) => {
+                                  const val = e.target.value;
+                                  setClassGrades(prev => prev.map((item, i) => i === idx ? { ...item, af: val } : item));
+                                }}
+                                style={{ width: '60px', padding: '2px 4px', fontSize: '0.85rem' }}
+                              />
+                            </td>
+                            <td>
+                              <input
+                                type="number"
+                                min="0"
+                                max="64"
+                                value={g.hours}
+                                onChange={(e) => {
+                                  const val = parseInt(e.target.value) || 0;
+                                  setClassGrades(prev => prev.map((item, i) => i === idx ? { ...item, hours: val } : item));
+                                }}
+                                style={{ width: '60px', padding: '2px 4px', fontSize: '0.85rem' }}
+                              />
+                            </td>
+                            <td>
+                              <strong style={{ color: 'var(--solar-blue-main)' }}>
+                                {g.af !== ''
+                                  ? (((g.p1 + g.p2) / 2 + Number(g.af)) / 2).toFixed(1)
+                                  : ((g.p1 * 0.4) + (g.p2 * 0.6)).toFixed(1)}
+                              </strong>
+                            </td>
+                            <td>
+                              <span style={{
+                                fontWeight: 600,
+                                color: g.situation.includes('Aprovado') ? 'var(--solar-success)' : 'var(--solar-warning)',
+                                fontSize: '0.85rem'
+                              }}>
+                                {g.situation}
+                              </span>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
               </div>
             </div>
           )}
