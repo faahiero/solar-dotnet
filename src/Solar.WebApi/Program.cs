@@ -27,14 +27,24 @@ using Serilog.Events;
 // 1. Carrega variáveis de ambiente do arquivo .env (se presente) para desenvolvimento local
 DotEnvLoader.Load();
 
-// 2. Configuração do Serilog (Structured Logging)
-Log.Logger = new LoggerConfiguration()
+// 2. Configuração do Serilog (Structured Logging + Seq Integration)
+var seqServerUrl = Environment.GetEnvironmentVariable("SEQ_SERVER_URL") ?? 
+                   Environment.GetEnvironmentVariable("Seq__ServerUrl");
+
+var loggerConfig = new LoggerConfiguration()
     .MinimumLevel.Information()
     .MinimumLevel.Override("Microsoft.AspNetCore", LogEventLevel.Warning)
     .MinimumLevel.Override("Microsoft.EntityFrameworkCore.Database.Command", LogEventLevel.Warning)
     .Enrich.FromLogContext()
-    .WriteTo.Console(outputTemplate: "[{Timestamp:HH:mm:ss} {Level:u3}] {Message:lj}{NewLine}{Exception}")
-    .CreateLogger();
+    .Enrich.WithProperty("Application", "Solar.LMS")
+    .WriteTo.Console(outputTemplate: "[{Timestamp:HH:mm:ss} {Level:u3}] {Message:lj}{NewLine}{Exception}");
+
+if (!string.IsNullOrWhiteSpace(seqServerUrl))
+{
+    loggerConfig.WriteTo.Seq(seqServerUrl);
+}
+
+Log.Logger = loggerConfig.CreateLogger();
 
 var builder = WebApplication.CreateBuilder(args);
 builder.Host.UseSerilog();
