@@ -12,6 +12,7 @@ using Solar.Domain.Discussions;
 using Solar.Domain.Entities;
 using Solar.Domain.Grading;
 using Solar.Infrastructure.Background;
+using Solar.Infrastructure.Configuration;
 using Solar.Infrastructure.Identity;
 using Solar.Infrastructure.Integrations.BigBlueButton;
 using Solar.Infrastructure.Integrations.Sigaa;
@@ -21,7 +22,11 @@ using Solar.WebApi.Hubs;
 using Solar.WebApi.Middlewares;
 using Scalar.AspNetCore;
 
+// 1. Carrega variáveis de ambiente do arquivo .env (se presente) para desenvolvimento local
+DotEnvLoader.Load();
+
 var builder = WebApplication.CreateBuilder(args);
+builder.Configuration.AddEnvironmentVariables();
 
 // Configuração do DbContext (PostgreSQL em produção ou InMemory para testes)
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
