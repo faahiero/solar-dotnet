@@ -163,7 +163,7 @@ app.UseMiddleware<ExamLockoutMiddleware>();
 // Endpoints da API (Minimal APIs)
 // ----------------------------------------------------
 
-// Health Check com verificação de banco de dados
+// Health Checks & Probes de Orquestração (Docker / Kubernetes / Cloud)
 app.MapGet("/health", async (SolarDbContext db) =>
 {
     bool dbOk = false;
@@ -183,6 +183,31 @@ app.MapGet("/health", async (SolarDbContext db) =>
 })
 .WithName("HealthCheck")
 .WithSummary("Verifica a integridade do serviço e do banco de dados");
+
+app.MapGet("/healthz", () => Results.Ok(new { Status = "Healthy", Timestamp = DateTime.UtcNow }))
+    .WithName("Healthz")
+    .WithSummary("Verificação geral de integridade (Health Probe)");
+
+app.MapGet("/livez", () => Results.Ok(new { Status = "Live", Timestamp = DateTime.UtcNow }))
+    .WithName("Livez")
+    .WithSummary("Liveness Probe para orquestradores");
+
+app.MapGet("/readyz", async (SolarDbContext db) =>
+{
+    try
+    {
+        var canConnect = await db.Database.CanConnectAsync();
+        return canConnect
+            ? Results.Ok(new { Status = "Ready", Database = "Connected", Timestamp = DateTime.UtcNow })
+            : Results.Json(new { Status = "Not Ready", Database = "Disconnected" }, statusCode: 503);
+    }
+    catch (Exception ex)
+    {
+        return Results.Json(new { Status = "Error", Message = ex.Message }, statusCode: 503);
+    }
+})
+.WithName("Readyz")
+.WithSummary("Readiness Probe para tráfego");
 
 // Autenticação com suporte aos hashes legados Devise (SHA1 / SHA1-MD5 e busca por Username/CPF)
 app.MapPost("/api/v1/auth/login", async (

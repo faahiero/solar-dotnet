@@ -1,0 +1,39 @@
+name: 🐛 Relato de Bug
+description: Relate um erro ou comportamento inesperado no Solar LMS.
+title: "[Bug]: "
+labels: ["bug", "triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Obrigado por relatar o problema! Por favor, forneça as informações abaixo para nos ajudar a reproduzir.
+  - type: textarea
+    id: description
+    attributes:
+      label: Descrição do Problema
+      description: Uma descrição clara e concisa do que aconteceu.
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Passos para Reproduzir
+      description: Como reproduzir o erro.
+      placeholder: |
+        1. Acesse '...'
+        2. Clique em '...'
+        3. Veja o erro
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Comportamento Esperado
+      description: O que você esperava que acontecesse.
+    validations:
+      required: true
+  - type: input
+    id: environment
+    attributes:
+      label: Ambiente / Navegador / Perfil
+      placeholder: Ex: Chrome 120, Perfil Docente, Docker Local
