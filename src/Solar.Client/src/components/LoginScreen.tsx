@@ -223,19 +223,21 @@ export const LoginScreen = ({ onLoginSuccess }: LoginScreenProps) => {
 
         {/* Logos Oficiais UFC e UFC Virtual */}
         <div className="login-institutional-logos">
-          <img src="/assets/images/logo_ufc.png" alt="UFC" style={{ height: '52px', filter: 'brightness(0) invert(1)' }} />
-          <img src="/assets/images/ufcVirtual.png" alt="UFC Virtual" style={{ height: '48px', filter: 'brightness(0) invert(1)' }} />
+          <img src="/assets/images/logo_ufc.png" alt="UFC" style={{ height: '48px', filter: 'brightness(0) invert(1)' }} />
+          <img src="/assets/images/ufcVirtual.png" alt="UFC Virtual" style={{ height: '44px', filter: 'brightness(0) invert(1)' }} />
         </div>
+      </div>
 
-        {/* Rodapé de Links */}
-        <div className="login-bottom-nav">
+      {/* 3. Rodapé Oficial da Página de Login */}
+      <footer className="login-official-footer">
+        <div className="footer-links-row">
           <a href="#portais">Portais ▲</a>
           <a href="#desenvolvimento">Desenvolvimento ▲</a>
           <a href="#privacidade">Política de privacidade</a>
           <a href="#ajuda">Ajuda ▲</a>
           <a href="#idioma">Idioma ▲</a>
         </div>
-      </div>
+      </footer>
 
       {/* Widget VLibras Flutuante */}
       <div className="vlibras-badge">
