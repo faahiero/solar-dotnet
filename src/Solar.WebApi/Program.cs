@@ -21,12 +21,37 @@ using Solar.Infrastructure.Reports;
 using Solar.WebApi.Hubs;
 using Solar.WebApi.Middlewares;
 using Scalar.AspNetCore;
+using Serilog;
+using Serilog.Events;
 
 // 1. Carrega variáveis de ambiente do arquivo .env (se presente) para desenvolvimento local
 DotEnvLoader.Load();
 
+// 2. Configuração do Serilog (Structured Logging)
+Log.Logger = new LoggerConfiguration()
+    .MinimumLevel.Information()
+    .MinimumLevel.Override("Microsoft.AspNetCore", LogEventLevel.Warning)
+    .MinimumLevel.Override("Microsoft.EntityFrameworkCore.Database.Command", LogEventLevel.Warning)
+    .Enrich.FromLogContext()
+    .WriteTo.Console(outputTemplate: "[{Timestamp:HH:mm:ss} {Level:u3}] {Message:lj}{NewLine}{Exception}")
+    .CreateLogger();
+
 var builder = WebApplication.CreateBuilder(args);
+builder.Host.UseSerilog();
 builder.Configuration.AddEnvironmentVariables();
+
+// 3. Configuração do Sentry (Error Tracking & Crash Reporting) se DSN fornecido
+var sentryDsn = builder.Configuration["Sentry:Dsn"] ?? builder.Configuration["SENTRY_DSN"];
+if (!string.IsNullOrWhiteSpace(sentryDsn) && !builder.Environment.IsEnvironment("Testing"))
+{
+    builder.WebHost.UseSentry(options =>
+    {
+        options.Dsn = sentryDsn;
+        options.TracesSampleRate = 1.0;
+        options.Environment = builder.Environment.EnvironmentName;
+        options.SendDefaultPii = false;
+    });
+}
 
 // Configuração do DbContext (PostgreSQL em produção ou InMemory para testes)
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
@@ -164,6 +189,12 @@ if (app.Environment.IsDevelopment())
 {
     app.UseHttpsRedirection();
 }
+
+// Logging Estruturado de Requisições HTTP com Serilog
+app.UseSerilogRequestLogging(options =>
+{
+    options.MessageTemplate = "HTTP {RequestMethod} {RequestPath} respondeu {StatusCode} em {Elapsed:0.0000} ms";
+});
 
 // Servir o painel web interativo estático (wwwroot)
 app.UseDefaultFiles();
