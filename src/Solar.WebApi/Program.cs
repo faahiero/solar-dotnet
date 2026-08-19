@@ -206,6 +206,28 @@ if (app.Environment.IsDevelopment())
 app.UseSerilogRequestLogging(options =>
 {
     options.MessageTemplate = "HTTP {RequestMethod} {RequestPath} respondeu {StatusCode} em {Elapsed:0.0000} ms";
+
+    // Ignora rotas de telemetria, health checks e consulta do próprio painel de logs para evitar loop de ruído
+    options.GetLevel = (httpContext, elapsed, ex) =>
+    {
+        var path = httpContext.Request.Path.Value ?? "";
+        if (path.StartsWith("/api/v1/admin/logs", StringComparison.OrdinalIgnoreCase) ||
+            path.StartsWith("/health", StringComparison.OrdinalIgnoreCase) ||
+            path.StartsWith("/healthz", StringComparison.OrdinalIgnoreCase) ||
+            path.StartsWith("/livez", StringComparison.OrdinalIgnoreCase) ||
+            path.StartsWith("/readyz", StringComparison.OrdinalIgnoreCase))
+        {
+            return LogEventLevel.Verbose; // Nível abaixo de Information (não grava no buffer nem no console)
+        }
+
+        if (ex != null || httpContext.Response.StatusCode >= 500)
+            return LogEventLevel.Error;
+
+        if (httpContext.Response.StatusCode >= 400)
+            return LogEventLevel.Warning;
+
+        return LogEventLevel.Information;
+    };
 });
 
 // Servir o painel web interativo estático (wwwroot)
