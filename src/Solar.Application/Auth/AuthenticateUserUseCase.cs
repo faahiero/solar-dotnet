@@ -92,6 +92,10 @@ public class AuthenticateUserUseCase
 
         await _dbContext.SaveChangesAsync(cancellationToken);
 
+        int profileType = user.Username.StartsWith("prof", StringComparison.OrdinalIgnoreCase) ? 4 : // Professor
+                          user.Username.Contains("admin", StringComparison.OrdinalIgnoreCase) ? 16 : // Administrador
+                          1; // Aluno
+
         return new LoginResponse
         {
             Success = true,
@@ -102,10 +106,10 @@ public class AuthenticateUserUseCase
             {
                 Id = user.Id,
                 Username = user.Username,
-                Name = user.Name,
+                Name = user.Name ?? user.Username,
                 Email = user.Email,
                 Cpf = user.Cpf,
-                ProfileTypes = 1 // Aluno
+                ProfileTypes = profileType
             }
         };
     }
