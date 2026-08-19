@@ -16,6 +16,8 @@ services:
           property: connectionString
       - key: PORT
         value: "8080"
+      - key: Jwt__Secret
+        generateValue: true
 
 databases:
   - name: solar-db

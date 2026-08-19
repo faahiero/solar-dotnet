@@ -34,7 +34,14 @@ if (!string.IsNullOrEmpty(connectionString) && !builder.Environment.IsEnvironmen
 {
     var formattedConn = FormatNpgsqlConnectionString(connectionString);
     builder.Services.AddDbContext<SolarDbContext>(options =>
-        options.UseNpgsql(formattedConn));
+        options.UseNpgsql(formattedConn, npgsql =>
+        {
+            npgsql.EnableRetryOnFailure(
+                maxRetryCount: 5,
+                maxRetryDelay: TimeSpan.FromSeconds(10),
+                errorCodesToAdd: null);
+            npgsql.CommandTimeout(30);
+        }));
 }
 else
 {
@@ -1835,7 +1842,7 @@ public partial class Program
                 var host = uri.Host;
                 var port = uri.Port > 0 ? uri.Port : 5432;
                 var database = uri.AbsolutePath.TrimStart('/');
-                return $"Host={host};Port={port};Database={database};Username={username};Password={password};SSL Mode=Require;Trust Server Certificate=true;";
+                return $"Host={host};Port={port};Database={database};Username={username};Password={password};SSL Mode=Require;Trust Server Certificate=true;Keepalive=30;Pooling=true;MinPoolSize=1;MaxPoolSize=25;";
             }
             catch
             {
