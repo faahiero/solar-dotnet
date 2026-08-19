@@ -44,6 +44,7 @@ else
 
 // Injeção de dependências dos serviços de Domínio e Aplicação
 builder.Services.AddScoped<ISolarAuthDbContext>(sp => sp.GetRequiredService<SolarDbContext>());
+builder.Services.AddScoped<IBlacklistDbContext>(sp => sp.GetRequiredService<SolarDbContext>());
 builder.Services.AddSingleton<GradingCalculationService>();
 builder.Services.AddSingleton<ExamScoringService>();
 builder.Services.AddSingleton<AllocationTagScopeService>();
@@ -52,9 +53,9 @@ builder.Services.AddSingleton<DisciplineImportService>();
 builder.Services.AddSingleton<GroupAssignmentService>();
 builder.Services.AddSingleton<InternalMessagingService>();
 builder.Services.AddSingleton<UserBatchImportService>();
-builder.Services.AddSingleton<BlacklistService>();
+builder.Services.AddScoped<BlacklistService>();
 builder.Services.AddSingleton<IEmailNotificationService, ConsoleEmailNotificationService>();
-builder.Services.AddSingleton<PasswordResetService>();
+builder.Services.AddScoped<PasswordResetService>();
 builder.Services.AddScoped<CalculateStudentGradesUseCase>();
 builder.Services.AddScoped<AuthenticateUserUseCase>();
 builder.Services.AddScoped<IPasswordHasher<User>, DeviseLegacyPasswordHasher<User>>();
