@@ -1,0 +1,32 @@
+# EditorConfig is awesome: https://EditorConfig.org
+
+root = true
+
+[*]
+end_of_line = lf
+insert_final_newline = true
+trim_trailing_whitespace = true
+charset = utf-8
+
+[*.cs]
+indent_style = space
+indent_size = 4
+csharp_style_var_for_built_in_types = true:suggestion
+csharp_style_var_when_type_is_apparent = true:suggestion
+csharp_style_expression_bodied_methods = when_on_single_line:suggestion
+csharp_style_expression_bodied_properties = true:suggestion
+
+[*.{js,jsx,ts,tsx}]
+indent_style = space
+indent_size = 2
+
+[*.{css,scss,sass,less}]
+indent_style = space
+indent_size = 2
+
+[*.{json,yml,yaml,xml,props,targets,csproj,sln}]
+indent_style = space
+indent_size = 2
+
+[*.md]
+trim_trailing_whitespace = false
