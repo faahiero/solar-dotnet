@@ -22,3 +22,13 @@ export interface VerifyCpfResponse {
   email?: string;
   message: string;
 }
+
+export const isAdminUser = (user: UserProfile | null | undefined): boolean => {
+  if (!user) return false;
+  return (user.profileTypes & 16) === 16 || user.username?.toLowerCase() === 'admin';
+};
+
+export const isTeacherUser = (user: UserProfile | null | undefined): boolean => {
+  if (!user) return false;
+  return (user.profileTypes & 4) === 4 || user.username?.toLowerCase().startsWith('prof');
+};
