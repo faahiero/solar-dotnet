@@ -41,13 +41,32 @@
   padding: 0;
 }
 
+html, body, #root {
+  min-height: 100vh;
+  margin: 0;
+  padding: 0;
+}
+
 body {
   font-family: 'Plus Jakarta Sans', 'Open Sans', Arial, Helvetica, sans-serif;
   background-color: var(--solar-body-bg);
   color: var(--solar-text-main);
   line-height: 1.5;
-  min-height: 100vh;
   -webkit-font-smoothing: antialiased;
+}
+
+#root {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+.solar-app-viewport {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  background-color: var(--solar-body-bg);
 }
 
 /* ==========================================================================
@@ -482,10 +501,11 @@ body {
    4. DASHBOARD / MEU SOLAR (Espelha 02_meu_solar_dashboard.png)
    ========================================================================== */
 .solar-page-content {
+  flex: 1 0 auto;
   width: 100%;
   max-width: 1600px;
-  margin: 16px auto;
-  padding: 0 24px;
+  margin: 16px auto 0 auto;
+  padding: 0 24px 32px 24px;
 }
 
 /* Flash Notice Verde */
@@ -1175,12 +1195,15 @@ body {
 }
 
 .solar-official-footer {
+  margin-top: auto;
+  flex-shrink: 0;
+  width: 100%;
   background: #eceef0;
   border-top: 1px solid var(--solar-border);
-  padding: 18px 24px;
-  margin-top: 48px;
+  padding: 16px 24px;
   text-align: center;
   font-size: 0.82rem;
+  box-sizing: border-box;
 }
 
 .footer-links-row {
