@@ -1,0 +1,24 @@
+name: 🚀 Solicitação de Funcionalidade
+description: Sugira uma nova ideia ou melhoria para o Solar LMS.
+title: "[Feature]: "
+labels: ["enhancement"]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: Qual problema essa funcionalidade resolve?
+      description: Uma descrição clara de qual é o caso de uso ou dificuldade atual.
+    validations:
+      required: true
+  - type: textarea
+    id: solution
+    attributes:
+      label: Solução Proposta
+      description: Como você imagina que essa funcionalidade deve funcionar.
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternativas Consideradas
+      description: Outras abordagens ou ferramentas avaliadas.

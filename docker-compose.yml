@@ -6,13 +6,13 @@ services:
     container_name: solar-lms-app
     restart: unless-stopped
     ports:
-      - "5142:8080"
+      - "${PORT:-5142}:8080"
     environment:
-      - ASPNETCORE_ENVIRONMENT=Production
-      - ConnectionStrings__DefaultConnection=Host=solar-db;Port=5432;Database=solar_development;Username=solar;Password=solar_secret;
-      - ConnectionStrings__Redis=solar-redis:6379
-      - BigBlueButton__ServerUrl=https://bbb.virtual.ufc.br/bigbluebutton
-      - BigBlueButton__SharedSecret=solar_bbb_secret
+      - ASPNETCORE_ENVIRONMENT=${ASPNETCORE_ENVIRONMENT:-Production}
+      - ConnectionStrings__DefaultConnection=${ConnectionStrings__DefaultConnection:-Host=solar-db;Port=5432;Database=solar_development;Username=solar;Password=solar_secret;}
+      - ConnectionStrings__Redis=${ConnectionStrings__Redis:-solar-redis:6379}
+      - BigBlueButton__ServerUrl=${BigBlueButton__ServerUrl:-https://bbb.virtual.ufc.br/bigbluebutton}
+      - BigBlueButton__SharedSecret=${BigBlueButton__SharedSecret:-solar_bbb_secret}
     depends_on:
       solar-db:
         condition: service_healthy
@@ -26,15 +26,15 @@ services:
     container_name: solar-lms-db
     restart: unless-stopped
     environment:
-      - POSTGRES_DB=solar_development
-      - POSTGRES_USER=solar
-      - POSTGRES_PASSWORD=solar_secret
+      - POSTGRES_DB=${POSTGRES_DB:-solar_development}
+      - POSTGRES_USER=${POSTGRES_USER:-solar}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-solar_secret}
     ports:
-      - "5433:5432"
+      - "${POSTGRES_PORT:-5433}:5432"
     volumes:
       - postgres-data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U solar -d solar_development"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-solar} -d ${POSTGRES_DB:-solar_development}"]
       interval: 5s
       timeout: 5s
       retries: 5
@@ -46,7 +46,7 @@ services:
     container_name: solar-lms-redis
     restart: unless-stopped
     ports:
-      - "6380:6379"
+      - "${REDIS_PORT:-6380}:6379"
     volumes:
       - redis-data:/data
     networks:

@@ -46,6 +46,23 @@ public class WebApiIntegrationTests : IClassFixture<WebApplicationFactory<Progra
     }
 
     [Fact]
+    public async Task Get_Healthz_And_Livez_Should_Return_200_OK()
+    {
+        // Arrange
+        var client = _factory.CreateClient();
+
+        // Act
+        var healthz = await client.GetAsync("/healthz");
+        var livez = await client.GetAsync("/livez");
+        var readyz = await client.GetAsync("/readyz");
+
+        // Assert
+        healthz.StatusCode.Should().Be(HttpStatusCode.OK);
+        livez.StatusCode.Should().Be(HttpStatusCode.OK);
+        readyz.StatusCode.Should().Be(HttpStatusCode.OK);
+    }
+
+    [Fact]
     public async Task Get_Index_Should_Serve_Frontend_Dashboard()
     {
         // Arrange
