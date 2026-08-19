@@ -9,8 +9,8 @@ services:
       - "${PORT:-5142}:8080"
     environment:
       - ASPNETCORE_ENVIRONMENT=${ASPNETCORE_ENVIRONMENT:-Production}
-      - ConnectionStrings__DefaultConnection=${ConnectionStrings__DefaultConnection:-Host=solar-db;Port=5432;Database=solar_development;Username=solar;Password=solar_secret;}
-      - ConnectionStrings__Redis=${ConnectionStrings__Redis:-solar-redis:6379}
+      - ConnectionStrings__DefaultConnection=Host=solar-db;Port=5432;Database=${POSTGRES_DB:-solar_development};Username=${POSTGRES_USER:-solar};Password=${POSTGRES_PASSWORD:-solar_secret};
+      - ConnectionStrings__Redis=solar-redis:6379
       - BigBlueButton__ServerUrl=${BigBlueButton__ServerUrl:-https://bbb.virtual.ufc.br/bigbluebutton}
       - BigBlueButton__SharedSecret=${BigBlueButton__SharedSecret:-solar_bbb_secret}
     depends_on:
