@@ -174,6 +174,9 @@ export const LoginScreen = ({ onLoginSuccess }: LoginScreenProps) => {
                   <button type="button" className="quick-chip" onClick={() => fillDemo('aluno1', '123456')}>
                     aluno1
                   </button>
+                  <button type="button" className="quick-chip" onClick={() => fillDemo('prof', '123456')}>
+                    prof (123456)
+                  </button>
                   <button type="button" className="quick-chip" onClick={() => fillDemo('prof.fabricio', 'solar123')}>
                     prof.fabricio
                   </button>
