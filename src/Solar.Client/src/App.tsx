@@ -99,7 +99,7 @@ export function App() {
         )}
 
         {activeTabKey === 'messages' && (
-          <MessagesView />
+          <MessagesView user={user} />
         )}
 
         {activeTabKey === 'enrollment' && (
