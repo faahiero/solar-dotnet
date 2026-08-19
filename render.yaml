@@ -18,6 +18,26 @@ services:
         value: "8080"
       - key: Jwt__Secret
         generateValue: true
+      - key: SEQ_SERVER_URL
+        fromService:
+          type: web
+          name: solar-seq
+          property: host
+
+  - type: web
+    name: solar-seq
+    env: image
+    image:
+      url: datalust/seq:latest
+    plan: free
+    region: oregon
+    envVars:
+      - key: ACCEPT_EULA
+        value: "Y"
+      - key: SEQ_FIRSTRUN_NOAUTHENTICATION
+        value: "true"
+      - key: PORT
+        value: "80"
 
 databases:
   - name: solar-db
