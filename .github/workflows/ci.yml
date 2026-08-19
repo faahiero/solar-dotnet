@@ -2,9 +2,10 @@ name: CI/CD Pipeline - Solar LMS (.NET 10 & React 19)
 
 on:
   push:
-    branches: [ main, develop, feature/* ]
+    branches: [ main, develop, 'feature/**', 'release/**', 'hotfix/**' ]
+    tags: [ 'v*.*.*' ]
   pull_request:
-    branches: [ main ]
+    branches: [ main, develop ]
 
 jobs:
   build-and-test:
