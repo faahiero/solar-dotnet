@@ -6,6 +6,7 @@ import { Header } from './components/Header';
 import { MySolarHome } from './components/MySolarHome';
 import { CurriculumUnitView } from './components/CurriculumUnitView';
 import { MessagesView } from './components/MessagesView';
+import { AdminLogsView } from './components/AdminLogsView';
 import './index.css';
 
 interface OpenCourseTab {
@@ -100,6 +101,10 @@ export function App() {
 
         {activeTabKey === 'messages' && (
           <MessagesView user={user} />
+        )}
+
+        {activeTabKey === 'logs' && (
+          <AdminLogsView />
         )}
 
         {activeTabKey === 'enrollment' && (

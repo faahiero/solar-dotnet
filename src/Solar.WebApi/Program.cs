@@ -17,6 +17,7 @@ using Solar.Infrastructure.Identity;
 using Solar.Infrastructure.Integrations.BigBlueButton;
 using Solar.Infrastructure.Integrations.Sigaa;
 using Solar.Infrastructure.Persistence;
+using Solar.WebApi.Logging;
 using Solar.Infrastructure.Reports;
 using Solar.WebApi.Hubs;
 using Solar.WebApi.Middlewares;
@@ -27,7 +28,7 @@ using Serilog.Events;
 // 1. Carrega variáveis de ambiente do arquivo .env (se presente) para desenvolvimento local
 DotEnvLoader.Load();
 
-// 2. Configuração do Serilog (Structured Logging + Seq Integration)
+// 2. Configuração do Serilog (Structured Logging + Dashboard Embutido + Seq)
 var seqServerUrl = Environment.GetEnvironmentVariable("SEQ_SERVER_URL") ?? 
                    Environment.GetEnvironmentVariable("Seq__ServerUrl");
 
@@ -37,7 +38,8 @@ var loggerConfig = new LoggerConfiguration()
     .MinimumLevel.Override("Microsoft.EntityFrameworkCore.Database.Command", LogEventLevel.Warning)
     .Enrich.FromLogContext()
     .Enrich.WithProperty("Application", "Solar.LMS")
-    .WriteTo.Console(outputTemplate: "[{Timestamp:HH:mm:ss} {Level:u3}] {Message:lj}{NewLine}{Exception}");
+    .WriteTo.Console(outputTemplate: "[{Timestamp:HH:mm:ss} {Level:u3}] {Message:lj}{NewLine}{Exception}")
+    .WriteTo.Sink(new SolarLogSink());
 
 if (!string.IsNullOrWhiteSpace(seqServerUrl))
 {
@@ -1849,6 +1851,41 @@ app.MapGet("/api/v1/admin/profiles", () => Results.Ok(new[]
 }))
 .WithName("AdminGetProfiles")
 .WithSummary("Retorna a lista de perfis e papéis do sistema");
+
+// Dashboard de Observabilidade e Logs Estruturados em Tempo Real
+app.MapGet("/api/v1/admin/logs", (int? limit, string? level, string? search) =>
+{
+    var logs = SolarLogSink.GetRecentLogs(limit ?? 250, level, search);
+    var all = SolarLogSink.GetRecentLogs(1000);
+    
+    var errorCount = all.Count(l => l.Level.Equals("Error", StringComparison.OrdinalIgnoreCase));
+    var warnCount = all.Count(l => l.Level.Equals("Warning", StringComparison.OrdinalIgnoreCase));
+    var infoCount = all.Count(l => l.Level.Equals("Information", StringComparison.OrdinalIgnoreCase));
+    var elapsedList = all.Where(l => l.ElapsedMs.HasValue).Select(l => l.ElapsedMs!.Value).ToList();
+    var avgLatency = elapsedList.Count > 0 ? elapsedList.Average() : 0;
+    var maxLatency = elapsedList.Count > 0 ? elapsedList.Max() : 0;
+
+    return Results.Ok(new
+    {
+        Total = all.Count,
+        ErrorCount = errorCount,
+        WarningCount = warnCount,
+        InformationCount = infoCount,
+        AverageLatencyMs = Math.Round(avgLatency, 2),
+        MaxLatencyMs = Math.Round(maxLatency, 2),
+        Logs = logs
+    });
+})
+.WithName("AdminGetLogs")
+.WithSummary("Consulta os logs estruturados em tempo real para o dashboard administrativo");
+
+app.MapPost("/api/v1/admin/logs/clear", () =>
+{
+    SolarLogSink.Clear();
+    return Results.Ok(new { Success = true, Message = "Buffer de logs limpo com sucesso." });
+})
+.WithName("AdminClearLogs")
+.WithSummary("Limpa o buffer de logs em memória");
 
 // Mapeamento do Hub SignalR de Chat
 app.MapHub<ChatHub>("/hubs/chat");

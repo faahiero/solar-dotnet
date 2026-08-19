@@ -105,6 +105,15 @@ export const Header = ({
           >
             MATRÍCULA
           </button>
+
+          <button
+            type="button"
+            className={`solar-main-tab ${activeTabKey === 'logs' ? 'active' : ''}`}
+            onClick={() => onSelectTab('logs')}
+            title="Dashboard de Observabilidade e Logs (Serilog)"
+          >
+            🔭 LOGS & TELEMETRIA
+          </button>
         </div>
 
         <div className="solar-top-actions">
