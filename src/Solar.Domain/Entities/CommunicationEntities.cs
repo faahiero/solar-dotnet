@@ -45,10 +45,13 @@ public class UserInternalMessage
     public long Id { get; set; }
     public long MessageId { get; set; }
     public long UserId { get; set; }
-    public bool Read { get; set; }
-    public bool Trash { get; set; }
-    public bool Deleted { get; set; }
-    public int Folder { get; set; } // 0 = Inbox, 1 = Sent, 2 = Trash
+    public int? Status { get; set; } // 0 = Inbox Unread, 1 = Read, 3 = Sent, 7 = Trash
+    public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+    public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
+
+    public bool Read => Status == 1 || Status == 3;
+    public bool Trash => Status == 7;
+    public int Folder => Status == 3 ? 1 : Status == 7 ? 2 : 0;
 
     // Navigation
     public InternalMessage? Message { get; set; }

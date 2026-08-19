@@ -11,6 +11,10 @@ public class InternalMessagingService
     public const int FolderInbox = 0;
     public const int FolderSent = 1;
     public const int FolderTrash = 2;
+    public const int StatusInboxUnread = 0;
+    public const int StatusInboxRead = 1;
+    public const int StatusSent = 3;
+    public const int StatusTrash = 7;
 
     /// <summary>
     /// Despacha uma nova mensagem para a caixa de saída do remetente e caixa de entrada dos destinatários.
@@ -33,22 +37,24 @@ public class InternalMessagingService
             UpdatedAt = DateTime.UtcNow
         };
 
-        // Cópia na pasta 'Enviados' (Sent) do remetente
+        // Cópia na pasta 'Enviados' (Sent: status 3) do remetente
         message.UserMessages.Add(new UserInternalMessage
         {
             UserId = senderUserId,
-            Folder = FolderSent,
-            Read = true
+            Status = StatusSent,
+            CreatedAt = DateTime.UtcNow,
+            UpdatedAt = DateTime.UtcNow
         });
 
-        // Cópias na pasta 'Entrada' (Inbox) de cada destinatário
+        // Cópias na pasta 'Entrada' (Inbox Unread: status 0) de cada destinatário
         foreach (var recipientId in recipientUserIds.Distinct().Where(id => id != senderUserId))
         {
             message.UserMessages.Add(new UserInternalMessage
             {
                 UserId = recipientId,
-                Folder = FolderInbox,
-                Read = false
+                Status = StatusInboxUnread,
+                CreatedAt = DateTime.UtcNow,
+                UpdatedAt = DateTime.UtcNow
             });
         }
 

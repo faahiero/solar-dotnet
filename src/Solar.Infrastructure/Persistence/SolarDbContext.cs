@@ -1,11 +1,12 @@
 using Microsoft.EntityFrameworkCore;
+using Solar.Application.Administration;
 using Solar.Application.Auth;
 using Solar.Domain.Entities;
 using Solar.Domain.Enums;
 
 namespace Solar.Infrastructure.Persistence;
 
-public class SolarDbContext : DbContext, ISolarAuthDbContext
+public class SolarDbContext : DbContext, ISolarAuthDbContext, IBlacklistDbContext
 {
     public SolarDbContext(DbContextOptions<SolarDbContext> options) : base(options)
     {
@@ -58,6 +59,7 @@ public class SolarDbContext : DbContext, ISolarAuthDbContext
     // Communication & Notifications
     public DbSet<Notification> Notifications => Set<Notification>();
     public DbSet<ReadNotification> ReadNotifications => Set<ReadNotification>();
+    public DbSet<UserBlacklist> UserBlacklists => Set<UserBlacklist>();
     public DbSet<InternalMessage> InternalMessages => Set<InternalMessage>();
     public DbSet<UserInternalMessage> UserInternalMessages => Set<UserInternalMessage>();
 
@@ -128,14 +130,13 @@ public class SolarDbContext : DbContext, ISolarAuthDbContext
         modelBuilder.Entity<Profile>(entity =>
         {
             entity.ToTable("profiles");
-            entity.HasKey(e => e.Id);
             entity.Property(e => e.Id).HasColumnName("id");
             entity.Property(e => e.Name).HasColumnName("name").HasMaxLength(255).IsRequired();
             entity.Property(e => e.Description).HasColumnName("description").HasMaxLength(500);
             entity.Property(e => e.Types).HasColumnName("types");
             entity.Property(e => e.Status).HasColumnName("status").HasDefaultValue(true);
-            entity.Property(e => e.CreatedAt).HasColumnName("created_at");
-            entity.Property(e => e.UpdatedAt).HasColumnName("updated_at");
+            entity.Ignore(e => e.CreatedAt);
+            entity.Ignore(e => e.UpdatedAt);
         });
 
         // Allocations
@@ -819,6 +820,7 @@ public class SolarDbContext : DbContext, ISolarAuthDbContext
             entity.HasKey(e => e.Id);
             entity.Property(e => e.Id).HasColumnName("id");
             entity.Ignore(e => e.UserId);
+            entity.Ignore(e => e.Sender);
             entity.Property(e => e.Subject).HasColumnName("subject").HasMaxLength(255);
             entity.Property(e => e.Body).HasColumnName("content").IsRequired();
             entity.Property(e => e.CreatedAt).HasColumnName("created_at");
@@ -833,10 +835,13 @@ public class SolarDbContext : DbContext, ISolarAuthDbContext
             entity.Property(e => e.Id).HasColumnName("id");
             entity.Property(e => e.MessageId).HasColumnName("message_id");
             entity.Property(e => e.UserId).HasColumnName("user_id");
-            entity.Property(e => e.Read).HasColumnName("read").HasDefaultValue(false);
-            entity.Property(e => e.Trash).HasColumnName("trash").HasDefaultValue(false);
-            entity.Property(e => e.Deleted).HasColumnName("deleted").HasDefaultValue(false);
-            entity.Property(e => e.Folder).HasColumnName("folder").HasDefaultValue(0);
+            entity.Property(e => e.Status).HasColumnName("status");
+            entity.Property(e => e.CreatedAt).HasColumnName("created_at");
+            entity.Property(e => e.UpdatedAt).HasColumnName("updated_at");
+
+            entity.Ignore(e => e.Read);
+            entity.Ignore(e => e.Trash);
+            entity.Ignore(e => e.Folder);
 
             entity.HasOne(e => e.Message)
                 .WithMany(m => m.UserMessages)
@@ -893,6 +898,25 @@ public class SolarDbContext : DbContext, ISolarAuthDbContext
                 .WithMany()
                 .HasForeignKey(e => e.ScheduleId)
                 .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        // UserBlacklist
+        modelBuilder.Entity<UserBlacklist>(entity =>
+        {
+            entity.ToTable("user_blacklist");
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Id).HasColumnName("id");
+            entity.Property(e => e.Cpf).HasColumnName("cpf").HasMaxLength(11);
+            entity.Property(e => e.UserId).HasColumnName("user_id");
+            entity.Property(e => e.Reason).HasColumnName("reason");
+            entity.Property(e => e.Active).HasColumnName("active").HasDefaultValue(true);
+            entity.Property(e => e.CreatedAt).HasColumnName("created_at");
+            entity.Property(e => e.UpdatedAt).HasColumnName("updated_at");
+
+            entity.HasOne(e => e.User)
+                .WithMany()
+                .HasForeignKey(e => e.UserId)
+                .OnDelete(DeleteBehavior.SetNull);
         });
     }
 }

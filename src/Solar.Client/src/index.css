@@ -1252,3 +1252,757 @@ body {
 .btn-solar-secondary:hover {
   background: #e2e6ea;
 }
+
+/* ==========================================================================
+   ESTILOS OFICIAIS DO MÓDULO DE MENSAGENS (SOLAR RUBY REPLICA)
+   ========================================================================== */
+
+.solar-messages-container {
+  width: 100%;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.solar-breadcrumb-bar {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.84rem;
+  color: #4b5563;
+  margin-bottom: 12px;
+}
+
+.breadcrumb-link {
+  color: var(--solar-blue-main);
+  cursor: pointer;
+  text-decoration: underline;
+}
+
+.breadcrumb-separator {
+  color: #9ca3af;
+}
+
+.breadcrumb-current {
+  font-weight: 700;
+  color: #1f2937;
+}
+
+.solar-messages-card {
+  background: #ffffff;
+  border: 1px solid var(--solar-border);
+  border-radius: 4px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  padding: 20px;
+}
+
+.messages-main-title {
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: #2c3e50;
+  margin: 0 0 16px 0;
+}
+
+/* 1. Abas das Pastas */
+.messages-folder-navigation {
+  display: flex;
+  gap: 24px;
+  border-bottom: 2px solid #e5e7eb;
+  padding-bottom: 6px;
+  margin-bottom: 16px;
+}
+
+.folder-tab-btn {
+  background: none;
+  border: none;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: #4b5563;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 4px;
+  position: relative;
+  transition: color 0.15s ease;
+}
+
+.folder-tab-btn:hover {
+  color: var(--solar-blue-main);
+}
+
+.folder-tab-btn.active {
+  color: var(--solar-blue-dark);
+  font-weight: 800;
+}
+
+.folder-tab-btn.active::after {
+  content: '';
+  position: absolute;
+  bottom: -8px;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: var(--solar-blue-main);
+  border-radius: 2px;
+}
+
+.folder-badge {
+  color: #dc2626;
+  font-weight: 700;
+}
+
+/* 2. Barra de Ferramentas / Toolbar */
+.messages-toolbar-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  background: #f8fafc;
+  border: 1px solid var(--solar-border);
+  border-radius: 4px;
+  padding: 8px 12px;
+  margin-bottom: 16px;
+}
+
+.select-view-mode {
+  padding: 6px 10px;
+  border: 1px solid var(--solar-border);
+  border-radius: 4px;
+  font-size: 0.84rem;
+  background: #ffffff;
+  color: #374151;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.toolbar-search-form {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 1;
+  max-width: 540px;
+}
+
+.input-search-field {
+  flex: 1;
+  padding: 6px 10px;
+  font-size: 0.84rem;
+  border: 1px solid var(--solar-border);
+  border-radius: 4px;
+  background: #ffffff;
+}
+
+.btn-search-icon {
+  background: #f1f5f9;
+  border: 1px solid var(--solar-border);
+  padding: 5px 10px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.9rem;
+}
+
+.btn-search-icon:hover {
+  background: #e2e8f0;
+}
+
+.toolbar-action-buttons {
+  display: flex;
+  gap: 6px;
+}
+
+.btn-action-solar {
+  background: #f8fafc;
+  border: 1px solid #cbd5e1;
+  padding: 6px 10px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 1rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s ease;
+}
+
+.btn-action-solar:hover:not(:disabled) {
+  background: #e2e8f0;
+  border-color: #94a3b8;
+}
+
+.btn-action-solar:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.btn-new-msg {
+  background: var(--solar-blue-main);
+  color: #ffffff;
+  border-color: var(--solar-blue-dark);
+  font-weight: 700;
+}
+
+.btn-new-msg:hover {
+  background: var(--solar-blue-dark);
+}
+
+/* 3. Tabela de Mensagens */
+.messages-list-wrapper {
+  overflow-x: auto;
+}
+
+.solar-messages-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.solar-messages-table th {
+  background: #f8fafc;
+  color: #475569;
+  font-size: 0.82rem;
+  font-weight: 700;
+  padding: 10px 8px;
+  border-bottom: 1px solid #cbd5e1;
+  text-align: left;
+}
+
+.message-table-row {
+  border-bottom: 1px solid #f1f5f9;
+  cursor: pointer;
+  transition: background 0.1s ease;
+}
+
+.message-table-row:hover {
+  background: #f8fafc;
+}
+
+.row-unread {
+  background: #f0fdf4;
+  font-weight: 700;
+}
+
+.row-selected {
+  background: #e0f2fe !important;
+}
+
+.message-table-row td {
+  padding: 10px 8px;
+  font-size: 0.88rem;
+  color: #1e293b;
+}
+
+.bold-unread {
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.messages-empty-box {
+  text-align: center;
+  padding: 36px 16px;
+  background: #f8fafc;
+  border: 1px dashed #cbd5e1;
+  border-radius: 4px;
+  color: #64748b;
+  font-size: 0.95rem;
+}
+
+/* 4. Tela de Compor Mensagem */
+.messages-compose-wrapper {
+  background: #fcfcfc;
+  border: 1px solid var(--solar-border);
+  border-radius: 4px;
+  padding: 20px;
+}
+
+.compose-field-row {
+  display: flex;
+  margin-bottom: 14px;
+  align-items: center;
+}
+
+.compose-field-label {
+  width: 120px;
+  font-size: 0.88rem;
+  font-weight: 700;
+  color: #374151;
+}
+
+.compose-field-input-group {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.compose-recipients-box {
+  flex: 1;
+  min-height: 38px;
+  background: #ffffff;
+  border: 1px solid var(--solar-border);
+  border-radius: 4px;
+  padding: 4px 8px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+}
+
+.recipients-placeholder {
+  color: #9ca3af;
+  font-size: 0.85rem;
+  font-style: italic;
+}
+
+.recipient-pill {
+  background: #e0f2fe;
+  color: #0369a1;
+  border: 1px solid #bae6fd;
+  border-radius: 14px;
+  padding: 2px 8px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.recipient-pill button {
+  background: none;
+  border: none;
+  color: #0284c7;
+  cursor: pointer;
+  font-weight: 800;
+  font-size: 0.75rem;
+}
+
+.btn-add-recipients-link {
+  background: none;
+  border: none;
+  color: var(--solar-blue-main);
+  font-weight: 700;
+  font-size: 0.88rem;
+  cursor: pointer;
+  text-decoration: underline;
+  white-space: nowrap;
+}
+
+.compose-input-text {
+  flex: 1;
+  padding: 8px 12px;
+  font-size: 0.88rem;
+  border: 1px solid var(--solar-border);
+  border-radius: 4px;
+  background: #ffffff;
+}
+
+.btn-mic-icon {
+  background: #f8fafc;
+  border: 1px solid #cbd5e1;
+  border-radius: 4px;
+  padding: 6px 10px;
+  cursor: pointer;
+  font-size: 1rem;
+}
+
+.btn-clip-attach {
+  background: #f8fafc;
+  border: 1px solid #cbd5e1;
+  border-radius: 4px;
+  padding: 6px 12px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #334155;
+  cursor: pointer;
+}
+
+.attachments-list-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 8px;
+}
+
+.attachment-chip {
+  background: #f1f5f9;
+  border: 1px solid #cbd5e1;
+  border-radius: 4px;
+  padding: 3px 8px;
+  font-size: 0.8rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.attachment-chip button {
+  background: none;
+  border: none;
+  color: #dc2626;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+/* Barra do CKEditor */
+.ckeditor-toolbar-mock {
+  background: #f1f5f9;
+  border: 1px solid var(--solar-border);
+  border-bottom: none;
+  border-radius: 4px 4px 0 0;
+  padding: 6px 8px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+
+.ck-toolbar-group {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  background: #ffffff;
+  border: 1px solid #cbd5e1;
+  border-radius: 3px;
+  padding: 2px 4px;
+}
+
+.ck-btn {
+  background: none;
+  border: none;
+  padding: 3px 5px;
+  font-size: 0.82rem;
+  cursor: pointer;
+  border-radius: 2px;
+}
+
+.ck-btn:hover {
+  background: #e2e8f0;
+}
+
+.ck-select {
+  font-size: 0.78rem;
+  border: none;
+  background: none;
+  color: #334155;
+  cursor: pointer;
+}
+
+.ck-divider {
+  color: #cbd5e1;
+  font-size: 0.8rem;
+}
+
+.ck-fx {
+  font-family: serif;
+  font-weight: 700;
+  color: #0284c7;
+}
+
+.compose-textarea {
+  width: 100%;
+  border: 1px solid var(--solar-border);
+  border-radius: 0 0 4px 4px;
+  padding: 12px;
+  font-family: inherit;
+  font-size: 0.9rem;
+  line-height: 1.5;
+  resize: vertical;
+  background: #ffffff;
+  box-sizing: border-box;
+}
+
+.compose-footer-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 16px;
+}
+
+/* 5. Painel de Leitura */
+.message-reading-pane {
+  background: #ffffff;
+  border: 1px solid var(--solar-border);
+  border-radius: 4px;
+  padding: 20px;
+}
+
+.message-reading-header {
+  border-bottom: 1px solid #e2e8f0;
+  padding-bottom: 14px;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 16px;
+}
+
+.reading-subject {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--solar-blue-dark);
+  margin: 0 0 8px 0;
+}
+
+.reading-meta {
+  display: flex;
+  gap: 16px;
+  font-size: 0.85rem;
+  color: #64748b;
+}
+
+.reading-actions-bar {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.message-reading-body {
+  padding-top: 16px;
+  font-size: 0.92rem;
+  line-height: 1.6;
+  color: #1e293b;
+}
+
+/* 6. Modal de Seleção de Contatos */
+.solar-contacts-modal-card {
+  background: #ffffff;
+  border-radius: 6px;
+  width: 100%;
+  max-width: 680px;
+  max-height: 90vh;
+  box-shadow: 0 16px 36px rgba(0, 0, 0, 0.4);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.contacts-modal-header {
+  background: var(--solar-blue-main);
+  color: #ffffff;
+  padding: 12px 18px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.contacts-modal-title h2 {
+  font-size: 1.05rem;
+  margin: 0;
+}
+
+.contacts-required-notice {
+  font-size: 0.75rem;
+  color: #fed7aa;
+}
+
+.contacts-modal-close {
+  background: none;
+  border: none;
+  color: #ffffff;
+  font-size: 1.1rem;
+  cursor: pointer;
+}
+
+.contacts-help-bar {
+  background: #f8fafc;
+  border-bottom: 1px solid #e2e8f0;
+  padding: 8px 18px;
+  font-size: 0.82rem;
+}
+
+.contacts-help-bar a {
+  color: var(--solar-blue-main);
+  text-decoration: underline;
+}
+
+.contacts-filters-panel {
+  padding: 14px 18px;
+  background: #f1f5f9;
+  border-bottom: 1px solid var(--solar-border);
+}
+
+.filter-row {
+  display: flex;
+  gap: 12px;
+}
+
+.filter-col {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.filter-label {
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: #475569;
+}
+
+.filter-select {
+  padding: 5px 8px;
+  border: 1px solid #cbd5e1;
+  border-radius: 3px;
+  font-size: 0.82rem;
+  background: #ffffff;
+}
+
+.btn-filter-action {
+  background: var(--solar-blue-main);
+  color: #ffffff;
+  border: 1px solid var(--solar-blue-dark);
+  padding: 4px 12px;
+  font-size: 0.82rem;
+  font-weight: 700;
+  border-radius: 3px;
+  cursor: pointer;
+}
+
+.contacts-box-container {
+  padding: 12px 18px;
+}
+
+.contacts-box-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.85rem;
+  color: #334155;
+  margin-bottom: 6px;
+}
+
+.btn-link-action {
+  background: none;
+  border: none;
+  color: var(--solar-blue-main);
+  font-size: 0.8rem;
+  font-weight: 700;
+  cursor: pointer;
+  text-decoration: underline;
+}
+
+.btn-danger-link {
+  color: #dc2626;
+}
+
+.contacts-list-scroll {
+  border: 1px solid var(--solar-border);
+  border-radius: 4px;
+  height: 140px;
+  overflow-y: auto;
+  background: #ffffff;
+  padding: 6px;
+}
+
+.contacts-grid-items {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.contact-item-card {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 6px 10px;
+  border: 1px solid #f1f5f9;
+  border-radius: 4px;
+  background: #fafafa;
+  cursor: pointer;
+  transition: background 0.1s ease;
+}
+
+.contact-item-card:hover {
+  background: #f0f9ff;
+  border-color: #bae6fd;
+}
+
+.contact-item-card.already-selected {
+  opacity: 0.55;
+  background: #f1f5f9;
+}
+
+.contact-card-info {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.82rem;
+}
+
+.contact-name {
+  font-weight: 700;
+  color: #1e293b;
+}
+
+.contact-email {
+  color: #64748b;
+  font-size: 0.78rem;
+}
+
+.contact-role-badge {
+  background: #e2e8f0;
+  color: #334155;
+  padding: 1px 6px;
+  border-radius: 10px;
+  font-size: 0.72rem;
+  font-weight: 600;
+}
+
+.btn-add-contact {
+  background: #f1f5f9;
+  border: 1px solid #cbd5e1;
+  font-size: 0.75rem;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 3px;
+  cursor: pointer;
+}
+
+.btn-add-contact:hover:not(:disabled) {
+  background: var(--solar-blue-main);
+  color: #ffffff;
+}
+
+.contacts-selected-box {
+  background: #f8fafc;
+}
+
+.selected-chips-container {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.selected-contact-chip {
+  background: #e0f2fe;
+  color: #0369a1;
+  border: 1px solid #bae6fd;
+  border-radius: 14px;
+  padding: 2px 8px;
+  font-size: 0.8rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.chip-name {
+  font-weight: 700;
+}
+
+.chip-role {
+  font-size: 0.72rem;
+  color: #0284c7;
+}
+
+.chip-remove-btn {
+  background: none;
+  border: none;
+  color: #0369a1;
+  font-weight: 800;
+  cursor: pointer;
+  font-size: 0.75rem;
+}
+
+.contacts-modal-footer {
+  padding: 12px 18px;
+  background: #f8fafc;
+  border-top: 1px solid var(--solar-border);
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
