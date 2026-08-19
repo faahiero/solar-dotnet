@@ -27,3 +27,10 @@ pnpm-debug.log*
 **/*.log
 .DS_Store
 Thumbs.db
+
+# Environment variables and secrets (NEVER COMMIT .env)
+.env
+.env.local
+.env.*.local
+*.local
+appsettings.*.local.json
