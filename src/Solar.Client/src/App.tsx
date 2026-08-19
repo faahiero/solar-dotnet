@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import type { UserProfile } from './types/auth';
+import { isAdminUser } from './types/auth';
 import type { CurriculumUnit } from './types/academic';
 import { LoginScreen } from './components/LoginScreen';
 import { Header } from './components/Header';
@@ -103,7 +104,7 @@ export function App() {
           <MessagesView user={user} />
         )}
 
-        {activeTabKey === 'logs' && (
+        {activeTabKey === 'logs' && isAdminUser(user) && (
           <AdminLogsView />
         )}
 

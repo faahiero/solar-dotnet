@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import type { UserProfile } from '../types/auth';
+import { isAdminUser } from '../types/auth';
 
 interface HeaderProps {
   user: UserProfile;
@@ -106,14 +107,17 @@ export const Header = ({
             MATRÍCULA
           </button>
 
-          <button
-            type="button"
-            className={`solar-main-tab ${activeTabKey === 'logs' ? 'active' : ''}`}
-            onClick={() => onSelectTab('logs')}
-            title="Dashboard de Observabilidade e Logs (Serilog)"
-          >
-            🔭 LOGS & TELEMETRIA
-          </button>
+          {isAdminUser(user) && (
+            <button
+              type="button"
+              className={`solar-main-tab ${activeTabKey === 'logs' ? 'active' : ''}`}
+              onClick={() => onSelectTab('logs')}
+              title="Dashboard de Observabilidade e Logs (Apenas Administradores)"
+              style={{ backgroundColor: activeTabKey === 'logs' ? 'var(--solar-blue-mid, #005a9c)' : '#0f172a', color: '#38bdf8' }}
+            >
+              🔭 LOGS (ADMIN)
+            </button>
+          )}
         </div>
 
         <div className="solar-top-actions">
