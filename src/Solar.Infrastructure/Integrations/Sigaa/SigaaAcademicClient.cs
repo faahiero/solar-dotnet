@@ -30,8 +30,15 @@ public class SigaaAcademicClient : ISigaaAcademicService
             return Task.FromResult<SigaaUserRecord?>(null);
         }
 
-        // Simulação / Contrato para chamadas WCF Core ao WSDL oficial do SIGAA
         var sanitizedCpf = cpf.Replace(".", "").Replace("-", "").Trim();
+
+        // CPFs iniciados em 000 são tratados como autocadastro externo direto (fora do SIGAA)
+        if (sanitizedCpf.StartsWith("000"))
+        {
+            return Task.FromResult<SigaaUserRecord?>(null);
+        }
+
+        // Simulação / Contrato para chamadas WCF Core ao WSDL oficial do SIGAA
         return Task.FromResult<SigaaUserRecord?>(new SigaaUserRecord
         {
             Cpf = sanitizedCpf,
