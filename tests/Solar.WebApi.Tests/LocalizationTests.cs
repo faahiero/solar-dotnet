@@ -1,6 +1,7 @@
 using System.Net;
 using System.Net.Http.Json;
 using FluentAssertions;
+using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Xunit;
 
@@ -12,7 +13,10 @@ public class LocalizationTests : IClassFixture<WebApplicationFactory<Program>>
 
     public LocalizationTests(WebApplicationFactory<Program> factory)
     {
-        _factory = factory;
+        _factory = factory.WithWebHostBuilder(builder =>
+        {
+            builder.UseEnvironment("Testing");
+        });
     }
 
     [Fact]

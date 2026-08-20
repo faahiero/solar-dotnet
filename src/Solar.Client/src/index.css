@@ -2572,3 +2572,167 @@ body {
 .solar-register-cancel-link:hover {
   color: #ffffff;
 }
+
+/* ==========================================================================
+   RECUPERAÇÃO DE SENHA (Devise Passwords - Padrão Solar LMS)
+   ========================================================================== */
+.solar-password-recovery-wrapper {
+  width: 100%;
+  max-width: 440px;
+  margin: 0 auto;
+  text-align: left;
+}
+
+.solar-password-recovery-card {
+  background: #ffffff;
+  border-radius: 12px;
+  box-shadow: 0 15px 35px -5px rgba(0, 0, 0, 0.35);
+  padding: 24px 28px;
+  box-sizing: border-box;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  animation: fadeIn 0.2s ease-out;
+}
+
+.solar-pwd-title {
+  font-size: 1.22rem;
+  font-weight: 700;
+  color: #1e3a8a;
+  margin: 0 0 12px 0;
+  text-align: center;
+}
+
+.solar-pwd-instructions {
+  font-size: 0.86rem;
+  color: #475569;
+  margin-bottom: 16px;
+  line-height: 1.45;
+}
+
+.solar-pwd-sigaa-notice {
+  font-size: 0.78rem;
+  color: #64748b;
+  margin-top: 8px;
+  background: #f8fafc;
+  padding: 8px 10px;
+  border-radius: 6px;
+  border-left: 3px solid #0284c7;
+}
+
+.solar-pwd-alert {
+  padding: 10px 14px;
+  border-radius: 6px;
+  font-size: 0.85rem;
+  margin-bottom: 16px;
+  line-height: 1.4;
+  font-weight: 500;
+}
+
+.solar-pwd-alert.error {
+  background: #fee2e2;
+  color: #dc2626;
+  border: 1px solid #fca5a5;
+}
+
+.solar-pwd-alert.info {
+  background: #e0f2fe;
+  color: #0369a1;
+  border: 1px solid #7dd3fc;
+}
+
+.solar-pwd-alert.success {
+  background: #dcfce7;
+  color: #166534;
+  border: 1px solid #86efac;
+}
+
+.solar-pwd-field {
+  margin-bottom: 14px;
+}
+
+.solar-pwd-label {
+  display: block;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: #334155;
+  margin-bottom: 5px;
+}
+
+.solar-pwd-input {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+  font-size: 0.88rem;
+  box-sizing: border-box;
+  transition: all 0.15s ease;
+  font-family: inherit;
+}
+
+.solar-pwd-input:focus {
+  border-color: #0284c7;
+  box-shadow: 0 0 0 3px rgba(2, 132, 199, 0.15);
+  outline: none;
+}
+
+.solar-pwd-actions {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 20px;
+  padding-top: 14px;
+  border-top: 1px solid #f1f5f9;
+}
+
+.solar-btn-pwd-back {
+  background: #f1f5f9;
+  border: 1px solid #cbd5e1;
+  color: #475569;
+  padding: 8px 18px;
+  border-radius: 6px;
+  font-size: 0.88rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.solar-btn-pwd-back:hover:not(:disabled) {
+  background: #e2e8f0;
+  color: #0f172a;
+}
+
+.solar-btn-pwd-send,
+.solar-btn-pwd-action {
+  background: linear-gradient(180deg, #fcd34d 0%, #f59e0b 100%);
+  border: 1px solid #d97706;
+  color: #78350f;
+  padding: 8px 22px;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 0 2px 4px rgba(245, 158, 11, 0.25);
+  transition: all 0.15s ease;
+}
+
+.solar-btn-pwd-send:hover:not(:disabled),
+.solar-btn-pwd-action:hover:not(:disabled) {
+  background: linear-gradient(180deg, #fde68a 0%, #fbbf24 100%);
+  box-shadow: 0 4px 8px rgba(245, 158, 11, 0.35);
+  transform: translateY(-1px);
+}
+
+.solar-pwd-bottom-token-link {
+  margin-top: 16px;
+  text-align: center;
+  font-size: 0.8rem;
+}
+
+.solar-pwd-bottom-token-link a {
+  color: #0284c7;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.solar-pwd-bottom-token-link a:hover {
+  color: #0369a1;
+}

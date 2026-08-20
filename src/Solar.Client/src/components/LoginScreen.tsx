@@ -3,6 +3,7 @@ import type { FormEvent } from 'react';
 import type { UserProfile, LoginResponse, VerifyCpfResponse } from '../types/auth';
 import { OfficialFooter } from './OfficialFooter';
 import { RegistrationWizard } from './RegistrationWizard';
+import { PasswordRecoveryModal } from './PasswordRecoveryModal';
 import { useTranslation } from '../context/LanguageContext';
 
 interface LoginScreenProps {
@@ -19,6 +20,7 @@ export const LoginScreen = ({ onLoginSuccess }: LoginScreenProps) => {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [cpfResult, setCpfResult] = useState<VerifyCpfResponse | null>(null);
   const [showWizard, setShowWizard] = useState(false);
+  const [showPasswordRecovery, setShowPasswordRecovery] = useState(false);
 
   // Estado para importação rápida SIGAA
   const [sigaaPassword, setSigaaPassword] = useState('');
@@ -172,6 +174,16 @@ export const LoginScreen = ({ onLoginSuccess }: LoginScreenProps) => {
             onCancel={() => setShowWizard(false)}
             onRegistrationSuccess={onLoginSuccess}
           />
+        ) : showPasswordRecovery ? (
+          /* MODAL/TELA DE RECUPERAÇÃO DE SENHA (ESQUECEU A SENHA) */
+          <PasswordRecoveryModal
+            onBackToLogin={() => setShowPasswordRecovery(false)}
+            onPasswordResetSuccess={(usernameOrEmail) => {
+              setShowPasswordRecovery(false);
+              setLogin(usernameOrEmail);
+              setActiveTab('signin');
+            }}
+          />
         ) : (
           /* CARD PRINCIPAL (LOGIN / VERIFICAÇÃO DE CPF) */
           <div className="login-form-card">
@@ -228,7 +240,14 @@ export const LoginScreen = ({ onLoginSuccess }: LoginScreenProps) => {
                   </button>
 
                   <div className="login-forgot-pwd">
-                    <a href="#recuperar-senha" onClick={(e) => { e.preventDefault(); alert('Em ambiente de teste institucional, utilize o usuário alunoteste ou seu CPF.'); }}>
+                    <a
+                      href="#recuperar-senha"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        setShowPasswordRecovery(true);
+                        setErrorMessage(null);
+                      }}
+                    >
                       {t('forgot_password')}
                     </a>
                   </div>
