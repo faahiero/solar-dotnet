@@ -1,6 +1,8 @@
 using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.AspNetCore.ResponseCompression;
 using System.IO.Compression;
+using System.Threading.RateLimiting;
 using Microsoft.EntityFrameworkCore;
 using Solar.Application.Administration;
 using Solar.Application.Auth;
@@ -162,6 +164,31 @@ builder.Services.Configure<GzipCompressionProviderOptions>(options =>
     options.Level = CompressionLevel.Fastest;
 });
 
+// Rate Limiting Nativo do ASP.NET Core (.NET 10)
+builder.Services.AddRateLimiter(options =>
+{
+    options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+
+    // Política de proteção contra força bruta em autenticação
+    options.AddFixedWindowLimiter("AuthLimiter", opt =>
+    {
+        opt.PermitLimit = 30; // 30 tentativas por minuto
+        opt.Window = TimeSpan.FromMinutes(1);
+        opt.QueueProcessingOrder = QueueProcessingOrder.OldestFirst;
+        opt.QueueLimit = 0;
+    });
+
+    // Política geral para APIs
+    options.AddSlidingWindowLimiter("GeneralApiLimiter", opt =>
+    {
+        opt.PermitLimit = 300; // 300 requisições por minuto
+        opt.Window = TimeSpan.FromMinutes(1);
+        opt.SegmentsPerWindow = 6;
+        opt.QueueProcessingOrder = QueueProcessingOrder.OldestFirst;
+        opt.QueueLimit = 10;
+    });
+});
+
 // OpenAPI / Swagger
 builder.Services.AddOpenApi();
 
@@ -275,6 +302,9 @@ app.UseMiddleware<SecurityHeadersMiddleware>();
 // Compressão Dinâmica de Resposta HTTP (Brotli/Gzip)
 app.UseResponseCompression();
 
+// Rate Limiting para Proteção contra DoS e Força Bruta
+app.UseRateLimiter();
+
 // Habilitar Output Caching para respostas HTTP em cache no servidor
 app.UseOutputCache();
 
@@ -352,6 +382,7 @@ app.MapPost("/api/v1/auth/login", async (
 
     return Results.Ok(result);
 })
+.RequireRateLimiting("AuthLimiter")
 .WithName("Login")
 .WithSummary("Autentica o usuário com suporte a migração de hashes legados e login por Username ou CPF");
 
@@ -415,6 +446,7 @@ app.MapPost("/api/v1/auth/forgot-password", async (
     var result = await resetService.RequestPasswordResetAsync(request.EmailOrUsername, db, emailService);
     return Results.Ok(result);
 })
+.RequireRateLimiting("AuthLimiter")
 .WithName("ForgotPassword")
 .WithSummary("Envia token/link de redefinição de senha para o e-mail cadastrado");
 
