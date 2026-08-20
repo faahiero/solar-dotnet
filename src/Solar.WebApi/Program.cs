@@ -17,6 +17,7 @@ using Solar.Infrastructure.Identity;
 using Solar.Infrastructure.Integrations.BigBlueButton;
 using Solar.Infrastructure.Integrations.Sigaa;
 using Solar.Infrastructure.Persistence;
+using Solar.Infrastructure.Caching;
 using Solar.WebApi.Logging;
 using Solar.Infrastructure.Reports;
 using Solar.WebApi.Hubs;
@@ -87,6 +88,8 @@ else
 }
 
 // Injeção de dependências dos serviços de Domínio e Aplicação
+builder.Services.AddMemoryCache();
+builder.Services.AddSingleton<ISolarCacheService, SolarMemoryCacheService>();
 builder.Services.AddScoped<ISolarAuthDbContext>(sp => sp.GetRequiredService<SolarDbContext>());
 builder.Services.AddScoped<IBlacklistDbContext>(sp => sp.GetRequiredService<SolarDbContext>());
 builder.Services.AddSingleton<GradingCalculationService>();
@@ -473,142 +476,148 @@ app.MapGet("/api/v1/lessons", () => Results.Ok(new[]
 .WithSummary("Retorna a lista de aulas da turma");
 
 // Lista de Disciplinas / Ofertas Ativas do Aluno (Espelha 02_meu_solar_dashboard.png)
-app.MapGet("/api/v1/curriculum-units", async (SolarDbContext db) =>
+app.MapGet("/api/v1/curriculum-units", async (SolarDbContext db, ISolarCacheService cache) =>
 {
-    try
+    return await cache.GetOrCreateAsync("curriculum_units_active_list", async () =>
     {
-        var offers = await db.Offers
-            .Include(o => o.CurriculumUnit)
-            .Include(o => o.Course)
-            .Include(o => o.Semester)
-            .Take(10)
-            .ToListAsync();
-
-        if (offers.Any())
+        try
         {
-            return Results.Ok(offers.Select(o => new
+            var offers = await db.Offers
+                .Include(o => o.CurriculumUnit)
+                .Include(o => o.Course)
+                .Include(o => o.Semester)
+                .Take(10)
+                .ToListAsync();
+
+            if (offers.Any())
             {
-                Id = (int)o.Id,
-                Code = o.CurriculumUnit?.Code ?? ("CU-" + o.Id),
-                Name = o.CurriculumUnit?.Name ?? ("Disciplina " + o.Id),
-                CourseCode = o.Course?.Code ?? "00",
-                CourseName = o.Course?.Name ?? "Curso Geral",
-                Semester = o.Semester?.Name ?? "2011.1",
-                Type = o.CurriculumUnit?.CurriculumUnitTypeId == 2 ? "presential_undergrad" : "distance_undergrad",
-                TypeLabel = o.CurriculumUnit?.CurriculumUnitTypeId == 2 ? "Graduação Presencial" : "Graduação a Distância",
-                ClassCode = "TURMA-" + o.Id,
-                Description = o.CurriculumUnit?.Resume ?? o.CurriculumUnit?.Syllabus ?? "Estudo aprofundado dos tópicos programáticos e metodologias aplicadas.",
-                Hours = o.CurriculumUnit?.WorkingHours ?? 64
-            }));
+                return Results.Ok(offers.Select(o => new
+                {
+                    Id = (int)o.Id,
+                    Code = o.CurriculumUnit?.Code ?? ("CU-" + o.Id),
+                    Name = o.CurriculumUnit?.Name ?? ("Disciplina " + o.Id),
+                    CourseCode = o.Course?.Code ?? "00",
+                    CourseName = o.Course?.Name ?? "Curso Geral",
+                    Semester = o.Semester?.Name ?? "2011.1",
+                    Type = o.CurriculumUnit?.CurriculumUnitTypeId == 2 ? "presential_undergrad" : "distance_undergrad",
+                    TypeLabel = o.CurriculumUnit?.CurriculumUnitTypeId == 2 ? "Graduação Presencial" : "Graduação a Distância",
+                    ClassCode = "TURMA-" + o.Id,
+                    Description = o.CurriculumUnit?.Resume ?? o.CurriculumUnit?.Syllabus ?? "Estudo aprofundado dos tópicos programáticos e metodologias aplicadas.",
+                    Hours = o.CurriculumUnit?.WorkingHours ?? 64
+                }));
+            }
         }
-    }
-    catch
-    {
-        // Fallback para ambiente in-memory ou testes
-    }
+        catch
+        {
+            // Fallback para ambiente in-memory ou testes
+        }
 
-    return Results.Ok(new[]
-    {
-        new
+        return Results.Ok(new[]
         {
-            Id = 1,
-            Code = "RM404",
-            Name = "Introducao a Linguistica",
-            CourseCode = "108",
-            CourseName = "Licenciatura em Letras",
-            Semester = "2011.1",
-            Type = "distance_undergrad",
-            TypeLabel = "Graduação a Distância",
-            ClassCode = "IL-FOR",
-            Description = "Fundamentos da ciência da linguagem, fonética, sintaxe e semântica aplicada ao ensino.",
-            Hours = 64
-        },
-        new
-        {
-            Id = 2,
-            Code = "RM301",
-            Name = "Quimica I",
-            CourseCode = "109",
-            CourseName = "Licenciatura em Quimica",
-            Semester = "2011.1",
-            Type = "distance_undergrad",
-            TypeLabel = "Graduação a Distância",
-            ClassCode = "QM-CAU",
-            Description = "Pensando mais a longo prazo, o estudo dos princípios da química geral e orgânica aplicada.",
-            Hours = 64
-        },
-        new
-        {
-            Id = 3,
-            Code = "RM405",
-            Name = "Teoria da Literatura I",
-            CourseCode = "110",
-            CourseName = "Letras Portugues",
-            Semester = "2011.1",
-            Type = "presential_undergrad",
-            TypeLabel = "Graduação Presencial",
-            ClassCode = "TL-01",
-            Description = "Estudo dos gêneros literários, lírica, épica e narrativa contemporânea.",
-            Hours = 64
-        }
-    });
+            new
+            {
+                Id = 1,
+                Code = "RM404",
+                Name = "Introducao a Linguistica",
+                CourseCode = "108",
+                CourseName = "Licenciatura em Letras",
+                Semester = "2011.1",
+                Type = "distance_undergrad",
+                TypeLabel = "Graduação a Distância",
+                ClassCode = "IL-FOR",
+                Description = "Fundamentos da ciência da linguagem, fonética, sintaxe e semântica aplicada ao ensino.",
+                Hours = 64
+            },
+            new
+            {
+                Id = 2,
+                Code = "RM301",
+                Name = "Quimica I",
+                CourseCode = "109",
+                CourseName = "Licenciatura em Quimica",
+                Semester = "2011.1",
+                Type = "distance_undergrad",
+                TypeLabel = "Graduação a Distância",
+                ClassCode = "QM-CAU",
+                Description = "Pensando mais a longo prazo, o estudo dos princípios da química geral e orgânica aplicada.",
+                Hours = 64
+            },
+            new
+            {
+                Id = 3,
+                Code = "RM405",
+                Name = "Teoria da Literatura I",
+                CourseCode = "110",
+                CourseName = "Letras Portugues",
+                Semester = "2011.1",
+                Type = "presential_undergrad",
+                TypeLabel = "Graduação Presencial",
+                ClassCode = "TL-01",
+                Description = "Estudo dos gêneros literários, lírica, épica e narrativa contemporânea.",
+                Hours = 64
+            }
+        });
+    }, slidingExpiration: TimeSpan.FromMinutes(10));
 })
 .WithName("GetCurriculumUnits")
 .WithSummary("Retorna as disciplinas/ofertas ativas do aluno");
 
 // Detalhes da Turma e Responsáveis (Espelha 07_turma_disciplina_interna.png)
-app.MapGet("/api/v1/curriculum-units/{id}", async (int id, SolarDbContext db) =>
+app.MapGet("/api/v1/curriculum-units/{id}", async (int id, SolarDbContext db, ISolarCacheService cache) =>
 {
-    try
+    return await cache.GetOrCreateAsync($"curriculum_unit_detail_{id}", async () =>
     {
-        var offer = await db.Offers
-            .Include(o => o.CurriculumUnit)
-            .Include(o => o.Course)
-            .Include(o => o.Semester)
-            .FirstOrDefaultAsync(o => o.Id == id);
-
-        if (offer != null)
+        try
         {
-            return Results.Ok(new
+            var offer = await db.Offers
+                .Include(o => o.CurriculumUnit)
+                .Include(o => o.Course)
+                .Include(o => o.Semester)
+                .FirstOrDefaultAsync(o => o.Id == id);
+
+            if (offer != null)
             {
-                Id = (int)offer.Id,
-                Code = offer.CurriculumUnit?.Code ?? ("CU-" + offer.Id),
-                Name = offer.CurriculumUnit?.Name ?? ("Disciplina " + offer.Id),
-                CourseName = offer.Course?.Name ?? "Curso Geral",
-                Semester = offer.Semester?.Name ?? "2011.1",
-                ClassCode = "TURMA-" + offer.Id,
-                Description = offer.CurriculumUnit?.Resume ?? offer.CurriculumUnit?.Syllabus ?? "Estudo aprofundado dos tópicos programáticos e metodologias aplicadas.",
-                Hours = offer.CurriculumUnit?.WorkingHours ?? 64,
-                Staff = new[]
+                return Results.Ok(new
                 {
-                    new { Role = "Aluno Monitor", Name = "Aluno 3 (Monitor)", Email = "monitor@solar.ufc.br" },
-                    new { Role = "Professor Titular UAB", Name = "Prof. Carlos Eduardo (Titular)", Email = "professor@solar.ufc.br" },
-                    new { Role = "Tutor Presencial", Name = "Tutor Polo Caucaia", Email = "tutor.presencial@solar.ufc.br" },
-                    new { Role = "Tutor a Distância", Name = "Tutor Virtual Geral", Email = "tutor.distancia@solar.ufc.br" }
-                }
-            });
+                    Id = (int)offer.Id,
+                    Code = offer.CurriculumUnit?.Code ?? ("CU-" + offer.Id),
+                    Name = offer.CurriculumUnit?.Name ?? ("Disciplina " + offer.Id),
+                    CourseName = offer.Course?.Name ?? "Curso Geral",
+                    Semester = offer.Semester?.Name ?? "2011.1",
+                    ClassCode = "TURMA-" + offer.Id,
+                    Description = offer.CurriculumUnit?.Resume ?? offer.CurriculumUnit?.Syllabus ?? "Estudo aprofundado dos tópicos programáticos e metodologias aplicadas.",
+                    Hours = offer.CurriculumUnit?.WorkingHours ?? 64,
+                    Staff = new[]
+                    {
+                        new { Role = "Aluno Monitor", Name = "Aluno 3 (Monitor)", Email = "monitor@solar.ufc.br" },
+                        new { Role = "Professor Titular UAB", Name = "Prof. Carlos Eduardo (Titular)", Email = "professor@solar.ufc.br" },
+                        new { Role = "Tutor Presencial", Name = "Tutor Polo Caucaia", Email = "tutor.presencial@solar.ufc.br" },
+                        new { Role = "Tutor a Distância", Name = "Tutor Virtual Geral", Email = "tutor.distancia@solar.ufc.br" }
+                    }
+                });
+            }
         }
-    }
-    catch { }
+        catch { }
 
-    return Results.Ok(new
-    {
-        Id = id,
-        Code = id == 2 ? "RM301" : id == 1 ? "RM404" : "RM405",
-        Name = id == 2 ? "Quimica I" : id == 1 ? "Introducao a Linguistica" : "Teoria da Literatura I",
-        CourseName = id == 2 ? "Licenciatura em Quimica" : id == 1 ? "Licenciatura em Letras" : "Letras Portugues",
-        Semester = "2011.1",
-        ClassCode = id == 2 ? "QM-CAU" : id == 1 ? "IL-FOR" : "TL-01",
-        Description = "Estudo aprofundado dos tópicos programáticos e metodologias aplicadas.",
-        Hours = 64,
-        Staff = new[]
+        return Results.Ok(new
         {
-            new { Role = "Aluno Monitor", Name = "Aluno 3 (Monitor)", Email = "monitor@solar.ufc.br" },
-            new { Role = "Professor Titular UAB", Name = "Prof. Carlos Eduardo (Titular)", Email = "professor@solar.ufc.br" },
-            new { Role = "Tutor Presencial", Name = "Tutor Polo Caucaia", Email = "tutor.presencial@solar.ufc.br" },
-            new { Role = "Tutor a Distância", Name = "Tutor Virtual Geral", Email = "tutor.distancia@solar.ufc.br" }
-        }
-    });
+            Id = id,
+            Code = id == 2 ? "RM301" : id == 1 ? "RM404" : "RM405",
+            Name = id == 2 ? "Quimica I" : id == 1 ? "Introducao a Linguistica" : "Teoria da Literatura I",
+            CourseName = id == 2 ? "Licenciatura em Quimica" : id == 1 ? "Licenciatura em Letras" : "Letras Portugues",
+            Semester = "2011.1",
+            ClassCode = id == 2 ? "QM-CAU" : id == 1 ? "IL-FOR" : "TL-01",
+            Description = "Estudo aprofundado dos tópicos programáticos e metodologias aplicadas.",
+            Hours = 64,
+            Staff = new[]
+            {
+                new { Role = "Aluno Monitor", Name = "Aluno 3 (Monitor)", Email = "monitor@solar.ufc.br" },
+                new { Role = "Professor Titular UAB", Name = "Prof. Carlos Eduardo (Titular)", Email = "professor@solar.ufc.br" },
+                new { Role = "Tutor Presencial", Name = "Tutor Polo Caucaia", Email = "tutor.presencial@solar.ufc.br" },
+                new { Role = "Tutor a Distância", Name = "Tutor Virtual Geral", Email = "tutor.distancia@solar.ufc.br" }
+            }
+        });
+    }, slidingExpiration: TimeSpan.FromMinutes(10));
 })
 .WithName("GetCurriculumUnitDetails")
 .WithSummary("Retorna os detalhes e docentes de uma disciplina");
@@ -1327,116 +1336,121 @@ app.MapGet("/api/v1/messages/contacts", async (
     string? discipline,
     string? semester,
     string? search,
-    SolarDbContext db) =>
+    SolarDbContext db,
+    ISolarCacheService cache) =>
 {
-    long currentUserId = userId ?? 0;
-    var usersQuery = db.Users.AsQueryable();
-
-    if (contactsType == 2)
+    var cacheKey = $"contacts_{contactsType}_{roleType}_{userId}_{curriculumUnitId}_{search?.Trim().ToLower()}";
+    return await cache.GetOrCreateAsync(cacheKey, async () =>
     {
-        // Meus Contatos: Professores, Tutores, Coordenação e Colegas da turma
-        var myDirectContactIds = new HashSet<long> { 7, 8, 9, 6, 5, 10, 11, 12 };
-        usersQuery = usersQuery.Where(u => myDirectContactIds.Contains(u.Id));
-        if (currentUserId > 0)
+        long currentUserId = userId ?? 0;
+        var usersQuery = db.Users.AsQueryable();
+
+        if (contactsType == 2)
         {
-            usersQuery = usersQuery.Where(u => u.Id != currentUserId);
-        }
-    }
-    else
-    {
-        // Contatos do sistema: todos os usuários exceto o próprio autor se informado
-        if (currentUserId > 0)
-        {
-            usersQuery = usersQuery.Where(u => u.Id != currentUserId);
-        }
-    }
-
-    if (!string.IsNullOrWhiteSpace(search))
-    {
-        var s = search.Trim().ToLower();
-        usersQuery = usersQuery.Where(u => u.Name.ToLower().Contains(s) || u.Username.ToLower().Contains(s) || (u.Email != null && u.Email.ToLower().Contains(s)));
-    }
-
-    var users = await usersQuery
-        .OrderBy(u => u.Name)
-        .Take(50)
-        .ToListAsync();
-
-    var userIds = users.Select(u => u.Id).ToList();
-
-    // Busca as alocações e perfis reais no banco de dados (ignorando o perfil 'Basico' ID 12)
-    var userAllocations = await db.Allocations
-        .Where(a => userIds.Contains(a.UserId) && a.ProfileId != 12)
-        .Include(a => a.Profile)
-        .ToListAsync();
-
-    var profileMap = userAllocations
-        .GroupBy(a => a.UserId)
-        .ToDictionary(
-            g => g.Key,
-            g => g.Select(a => a.Profile).FirstOrDefault(p => p != null)
-        );
-
-    var contacts = users.Select(u =>
-    {
-        profileMap.TryGetValue(u.Id, out var prof);
-
-        string profileName = prof?.Name ?? "Aluno";
-        int profileTypes = (int?)prof?.Types ?? 4; // 4 = Profile_Type_Student
-
-        // Mapeamento preciso do papel conforme as regras do Solar Ruby:
-        string roleName;
-        int typeMask;
-
-        if (profileTypes == 16 || profileName.Contains("Admin", StringComparison.OrdinalIgnoreCase))
-        {
-            roleName = "Administrador";
-            typeMask = 16;
-        }
-        else if (profileTypes == 8 || profileName.Contains("Editor", StringComparison.OrdinalIgnoreCase))
-        {
-            roleName = "Editor / Coordenador";
-            typeMask = 8;
-        }
-        else if (profileName.Contains("Tutor Presencial", StringComparison.OrdinalIgnoreCase))
-        {
-            roleName = "Tutor Presencial";
-            typeMask = 32;
-        }
-        else if (profileName.Contains("Tutor", StringComparison.OrdinalIgnoreCase))
-        {
-            roleName = "Tutor a Distância";
-            typeMask = 2;
-        }
-        else if (profileTypes == 2 || profileName.Contains("Prof", StringComparison.OrdinalIgnoreCase))
-        {
-            roleName = "Docente / Professor";
-            typeMask = 4;
+            // Meus Contatos: Professores, Tutores, Coordenação e Colegas da turma
+            var myDirectContactIds = new HashSet<long> { 7, 8, 9, 6, 5, 10, 11, 12 };
+            usersQuery = usersQuery.Where(u => myDirectContactIds.Contains(u.Id));
+            if (currentUserId > 0)
+            {
+                usersQuery = usersQuery.Where(u => u.Id != currentUserId);
+            }
         }
         else
         {
-            roleName = "Aluno";
-            typeMask = 1;
+            // Contatos do sistema: todos os usuários exceto o próprio autor se informado
+            if (currentUserId > 0)
+            {
+                usersQuery = usersQuery.Where(u => u.Id != currentUserId);
+            }
         }
 
-        return new
+        if (!string.IsNullOrWhiteSpace(search))
         {
-            Id = u.Id,
-            Name = u.Name,
-            Email = u.Email ?? $"{u.Username}@solar.ufc.br",
-            Username = u.Username,
-            Role = roleName,
-            TypeMask = typeMask,
-            Resume = $"{u.Name} <{u.Email ?? u.Username + "@solar.ufc.br"}> ({roleName})"
-        };
-    }).ToList();
+            var s = search.Trim().ToLower();
+            usersQuery = usersQuery.Where(u => u.Name.ToLower().Contains(s) || u.Username.ToLower().Contains(s) || (u.Email != null && u.Email.ToLower().Contains(s)));
+        }
 
-    if (roleType.HasValue && roleType.Value > 0)
-    {
-        contacts = contacts.Where(c => c.TypeMask == roleType.Value).ToList();
-    }
+        var users = await usersQuery
+            .OrderBy(u => u.Name)
+            .Take(50)
+            .ToListAsync();
 
-    return Results.Ok(contacts);
+        var userIds = users.Select(u => u.Id).ToList();
+
+        // Busca as alocações e perfis reais no banco de dados (ignorando o perfil 'Basico' ID 12)
+        var userAllocations = await db.Allocations
+            .Where(a => userIds.Contains(a.UserId) && a.ProfileId != 12)
+            .Include(a => a.Profile)
+            .ToListAsync();
+
+        var profileMap = userAllocations
+            .GroupBy(a => a.UserId)
+            .ToDictionary(
+                g => g.Key,
+                g => g.Select(a => a.Profile).FirstOrDefault(p => p != null)
+            );
+
+        var contacts = users.Select(u =>
+        {
+            profileMap.TryGetValue(u.Id, out var prof);
+
+            string profileName = prof?.Name ?? "Aluno";
+            int profileTypes = (int?)prof?.Types ?? 4; // 4 = Profile_Type_Student
+
+            // Mapeamento preciso do papel conforme as regras do Solar Ruby:
+            string roleName;
+            int typeMask;
+
+            if (profileTypes == 16 || profileName.Contains("Admin", StringComparison.OrdinalIgnoreCase))
+            {
+                roleName = "Administrador";
+                typeMask = 16;
+            }
+            else if (profileTypes == 8 || profileName.Contains("Editor", StringComparison.OrdinalIgnoreCase))
+            {
+                roleName = "Editor / Coordenador";
+                typeMask = 8;
+            }
+            else if (profileName.Contains("Tutor Presencial", StringComparison.OrdinalIgnoreCase))
+            {
+                roleName = "Tutor Presencial";
+                typeMask = 32;
+            }
+            else if (profileName.Contains("Tutor", StringComparison.OrdinalIgnoreCase))
+            {
+                roleName = "Tutor a Distância";
+                typeMask = 2;
+            }
+            else if (profileTypes == 2 || profileName.Contains("Prof", StringComparison.OrdinalIgnoreCase))
+            {
+                roleName = "Docente / Professor";
+                typeMask = 4;
+            }
+            else
+            {
+                roleName = "Aluno";
+                typeMask = 1;
+            }
+
+            return new
+            {
+                Id = u.Id,
+                Name = u.Name,
+                Email = u.Email ?? $"{u.Username}@solar.ufc.br",
+                Username = u.Username,
+                Role = roleName,
+                TypeMask = typeMask,
+                Resume = $"{u.Name} <{u.Email ?? u.Username + "@solar.ufc.br"}> ({roleName})"
+            };
+        }).ToList();
+
+        if (roleType.HasValue && roleType.Value > 0)
+        {
+            contacts = contacts.Where(c => c.TypeMask == roleType.Value).ToList();
+        }
+
+        return Results.Ok(contacts);
+    }, slidingExpiration: TimeSpan.FromMinutes(2));
 })
 .WithName("GetMessageContacts")
 .WithSummary("Retorna os contatos do sistema com filtros por papel e disciplina para o modal de seleção");
