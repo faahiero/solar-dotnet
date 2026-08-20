@@ -1,4 +1,6 @@
 using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.ResponseCompression;
+using System.IO.Compression;
 using Microsoft.EntityFrameworkCore;
 using Solar.Application.Administration;
 using Solar.Application.Auth;
@@ -134,6 +136,32 @@ builder.Services.AddOutputCache(options =>
     options.AddPolicy("StaticCatalogPolicy", policy => policy.Expire(TimeSpan.FromMinutes(10)).Tag("catalog"));
 });
 
+// Compressão de Resposta HTTP em Tempo Real (Brotli / Gzip)
+builder.Services.AddResponseCompression(options =>
+{
+    options.EnableForHttps = true;
+    options.Providers.Add<BrotliCompressionProvider>();
+    options.Providers.Add<GzipCompressionProvider>();
+    options.MimeTypes = ResponseCompressionDefaults.MimeTypes.Concat(new[]
+    {
+        "application/json",
+        "text/plain",
+        "text/css",
+        "application/javascript",
+        "image/svg+xml"
+    });
+});
+
+builder.Services.Configure<BrotliCompressionProviderOptions>(options =>
+{
+    options.Level = CompressionLevel.Fastest;
+});
+
+builder.Services.Configure<GzipCompressionProviderOptions>(options =>
+{
+    options.Level = CompressionLevel.Fastest;
+});
+
 // OpenAPI / Swagger
 builder.Services.AddOpenApi();
 
@@ -240,6 +268,9 @@ app.UseSerilogRequestLogging(options =>
         return LogEventLevel.Information;
     };
 });
+
+// Compressão Dinâmica de Resposta HTTP (Brotli/Gzip)
+app.UseResponseCompression();
 
 // Habilitar Output Caching para respostas HTTP em cache no servidor
 app.UseOutputCache();
