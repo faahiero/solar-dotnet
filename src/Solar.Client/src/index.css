@@ -2736,3 +2736,17 @@ body {
 .solar-pwd-bottom-token-link a:hover {
   color: #0369a1;
 }
+
+.solar-pwd-sigaa-link {
+  display: inline-block;
+  color: #0284c7;
+  font-weight: 600;
+  font-size: 0.84rem;
+  text-decoration: underline;
+  cursor: pointer;
+  transition: color 0.15s ease;
+}
+
+.solar-pwd-sigaa-link:hover {
+  color: #0369a1;
+}

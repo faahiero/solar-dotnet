@@ -183,6 +183,10 @@ export const LoginScreen = ({ onLoginSuccess }: LoginScreenProps) => {
               setLogin(usernameOrEmail);
               setActiveTab('signin');
             }}
+            onGoToRegister={() => {
+              setShowPasswordRecovery(false);
+              setActiveTab('signup');
+            }}
           />
         ) : (
           /* CARD PRINCIPAL (LOGIN / VERIFICAÇÃO DE CPF) */
