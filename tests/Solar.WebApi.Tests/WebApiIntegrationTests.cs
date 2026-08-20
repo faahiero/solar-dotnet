@@ -1,4 +1,5 @@
 using System.Net;
+using System.IO.Compression;
 using System.Net.Http.Json;
 using FluentAssertions;
 using Microsoft.AspNetCore.Hosting;
@@ -303,6 +304,28 @@ public class WebApiIntegrationTests : IClassFixture<WebApplicationFactory<Progra
         var content = await secondResponse.Content.ReadAsStringAsync();
         content.Should().Contain("tutor_distance");
         content.Should().Contain("student");
+    }
+
+    [Fact]
+    public async Task Get_CurriculumUnits_With_AcceptEncoding_Gzip_Should_Return_Compressed_Response()
+    {
+        // Arrange
+        var client = _factory.CreateClient();
+        var request = new HttpRequestMessage(HttpMethod.Get, "/api/v1/curriculum-units");
+        request.Headers.Add("Accept-Encoding", "gzip");
+
+        // Act
+        var response = await client.SendAsync(request);
+
+        // Assert
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        response.Content.Headers.ContentEncoding.Should().Contain("gzip");
+
+        using var stream = await response.Content.ReadAsStreamAsync();
+        using var gzipStream = new GZipStream(stream, CompressionMode.Decompress);
+        using var reader = new StreamReader(gzipStream);
+        var content = await reader.ReadToEndAsync();
+        content.Should().Contain("RM404");
     }
 
     private record HealthResponse(string Status, string System, DateTime Timestamp);
