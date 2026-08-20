@@ -344,5 +344,19 @@ public class WebApiIntegrationTests : IClassFixture<WebApplicationFactory<Progra
         response.Headers.GetValues("Referrer-Policy").Should().Contain("strict-origin-when-cross-origin");
     }
 
+    [Fact]
+    public async Task Post_Login_Under_Permit_Limit_Should_Respond_Without_RateLimit_Block()
+    {
+        // Arrange
+        var client = _factory.CreateClient();
+        var loginRequest = new LoginRequest { Login = "aluno1", Password = "senha123" };
+
+        // Act
+        var response = await client.PostAsJsonAsync("/api/v1/auth/login", loginRequest);
+
+        // Assert: Deve responder sem HTTP 429
+        response.StatusCode.Should().NotBe(HttpStatusCode.TooManyRequests);
+    }
+
     private record HealthResponse(string Status, string System, DateTime Timestamp);
 }
