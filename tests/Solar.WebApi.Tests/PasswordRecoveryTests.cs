@@ -40,6 +40,42 @@ public class PasswordRecoveryTests : IClassFixture<WebApplicationFactory<Program
     }
 
     [Fact]
+    public async Task ForgotPassword_NonExistingCpf_Should_Return_CadastrarNotice()
+    {
+        var client = _factory.CreateClient();
+
+        // CPF iniciando com 000 não existe nem no SIGAA
+        var response = await client.PostAsJsonAsync("/api/v1/auth/forgot-password", new ForgotPasswordRequest(
+            EmailOrUsernameOrCpf: "00099988877"
+        ));
+
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        var result = await response.Content.ReadFromJsonAsync<PasswordResetResult>();
+        result.Should().NotBeNull();
+        result!.Success.Should().BeFalse();
+        result.Message.Should().Contain("Nenhum usuário foi encontrado para o CPF informado");
+    }
+
+    [Fact]
+    public async Task ForgotPassword_NewSigaaStudent_Should_Identify_Sigaa_Record()
+    {
+        var client = _factory.CreateClient();
+
+        // CPF que não existe no Solar localmente, mas existe no SIGAA (não inicia em 000)
+        var response = await client.PostAsJsonAsync("/api/v1/auth/forgot-password", new ForgotPasswordRequest(
+            EmailOrUsernameOrCpf: "98765432100"
+        ));
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        var result = await response.Content.ReadFromJsonAsync<PasswordResetResult>();
+        result.Should().NotBeNull();
+        result!.IsIntegratedSigaa.Should().BeTrue();
+        result.NeedsRegistrationFirst.Should().BeTrue();
+        result.SigaaUrl.Should().Be("https://si3.ufc.br/sigaa/verTelaLogin.do");
+        result.Message.Should().Contain("SIGAA");
+    }
+
+    [Fact]
     public async Task ForgotPassword_IntegratedSigaaUser_Should_Return_SigaaNotice()
     {
         var client = _factory.CreateClient();
@@ -73,6 +109,7 @@ public class PasswordRecoveryTests : IClassFixture<WebApplicationFactory<Program
         var result = await response.Content.ReadFromJsonAsync<PasswordResetResult>();
         result.Should().NotBeNull();
         result!.IsIntegratedSigaa.Should().BeTrue();
+        result.SigaaUrl.Should().Be("https://si3.ufc.br/sigaa/verTelaLogin.do");
         result.Message.Should().Contain("SIGAA");
     }
 

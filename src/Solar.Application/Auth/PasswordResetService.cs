@@ -3,6 +3,7 @@ using System.Text;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Solar.Domain.Entities;
+using Solar.Application.Integrations.Sigaa;
 
 namespace Solar.Application.Auth;
 
@@ -14,6 +15,8 @@ public record PasswordResetResult(
     string Message,
     string? GeneratedToken = null,
     bool IsIntegratedSigaa = false,
+    bool NeedsRegistrationFirst = false,
+    string? SigaaUrl = null,
     string? MaskedEmail = null
 );
 
@@ -44,61 +47,114 @@ public class PasswordResetService
     public async Task<PasswordResetResult> RequestPasswordResetAsync(
         string emailOrUsernameOrCpf,
         ISolarAuthDbContext db,
-        IEmailNotificationService emailService)
+        IEmailNotificationService emailService,
+        ISigaaAcademicService? sigaaService = null)
     {
         if (string.IsNullOrWhiteSpace(emailOrUsernameOrCpf))
         {
-            return new PasswordResetResult(false, "Informe seu CPF, e-mail ou nome de usuário.");
+            return new PasswordResetResult(false, "Informe seu CPF para recuperar sua senha.");
         }
 
         var rawInput = emailOrUsernameOrCpf.Trim();
         var normalized = rawInput.ToLowerInvariant();
-        var sanitizedCpf = rawInput.Replace(".", "").Replace("-", "");
+        var sanitizedCpf = rawInput.Replace(".", "").Replace("-", "").Replace(" ", "");
 
+        // 1. Busca primeiro na base de dados local do Solar
         var user = await db.Users.FirstOrDefaultAsync(u =>
             (u.Email != null && u.Email.ToLower() == normalized) ||
             u.Username.ToLower() == normalized ||
-            (u.Cpf != null && (u.Cpf == rawInput || u.Cpf.Replace(".", "").Replace("-", "") == sanitizedCpf))
+            (u.Cpf != null && (u.Cpf == rawInput || u.Cpf.Replace(".", "").Replace("-", "").Replace(" ", "") == sanitizedCpf))
         );
 
-        if (user == null)
+        if (user != null)
         {
-            return new PasswordResetResult(false, "Usuário ou CPF não localizado no Solar LMS.");
-        }
+            // 2. Se for usuário integrado ao SIGAA
+            if (user.Integrated)
+            {
+                var sigaaLoginUrl = "https://si3.ufc.br/sigaa/verTelaLogin.do";
+                if (!user.Selfregistration)
+                {
+                    return new PasswordResetResult(
+                        false,
+                        "Identificamos seu vínculo acadêmico no SIGAA. Alunos e professores da UFC devem recuperar ou alterar sua senha diretamente no portal do SIGAA.",
+                        IsIntegratedSigaa: true,
+                        SigaaUrl: sigaaLoginUrl
+                    );
+                }
 
-        // Se for usuário integrado ao SIGAA sem autocadastro próprio
-        if (user.Integrated && !user.Selfregistration)
-        {
+                return new PasswordResetResult(
+                    false,
+                    "Seus dados foram sincronizados com o SIGAA/SI3. Caso esteja sem acesso, recupere seus dados diretamente no portal do SIGAA.",
+                    IsIntegratedSigaa: true,
+                    SigaaUrl: sigaaLoginUrl
+                );
+            }
+
+            // 3. Se for usuário do Solar Cursos / Autocadastro sem e-mail
+            if (string.IsNullOrWhiteSpace(user.Email))
+            {
+                return new PasswordResetResult(
+                    false,
+                    "Não há nenhum e-mail cadastrado para o CPF informado. Entre em contato com atendimento@virtual.ufc.br informando seu CPF, nome completo e data de nascimento."
+                );
+            }
+
+            // 4. Usuário local com e-mail válido: gera o token e dispara o e-mail
+            var tokenBytes = RandomNumberGenerator.GetBytes(32);
+            var token = Convert.ToHexString(tokenBytes).ToLowerInvariant();
+
+            lock (_activeTokens)
+            {
+                _activeTokens[token] = (user.Id, DateTime.UtcNow.AddHours(2));
+            }
+
+            await emailService.SendPasswordResetEmailAsync(user.Email, user.Name ?? user.Username, token);
+
+            var maskedEmail = MaskEmail(user.Email);
+
             return new PasswordResetResult(
-                false,
-                "Usuários com vínculo acadêmico integrado devem alterar ou recuperar sua senha diretamente no portal do SIGAA.",
-                IsIntegratedSigaa: true
+                true,
+                $"Um e-mail com instruções e código de recuperação de senha foi enviado para {maskedEmail}.",
+                GeneratedToken: token,
+                MaskedEmail: maskedEmail
             );
         }
 
-        if (string.IsNullOrWhiteSpace(user.Email))
+        // 5. Se NÃO foi localizado no banco local do Solar
+        var isCpf = sanitizedCpf.Length == 11 && sanitizedCpf.All(char.IsDigit);
+
+        if (isCpf && sigaaService != null)
         {
-            return new PasswordResetResult(false, "Não há e-mail cadastrado para esta conta. Procure a coordenação do seu curso.");
+            // Consulta em tempo real na integração do SIGAA
+            var sigaaProfile = await sigaaService.FindUserByCpfAsync(sanitizedCpf);
+            if (sigaaProfile != null)
+            {
+                return new PasswordResetResult(
+                    false,
+                    $"Identificamos seu vínculo acadêmico ativo no SIGAA ({sigaaProfile.Name}). Como este é seu primeiro acesso ao Solar LMS, ative sua conta na aba 'Cadastrar' informando seu CPF ou recupere sua senha no portal do SIGAA.",
+                    IsIntegratedSigaa: true,
+                    NeedsRegistrationFirst: true,
+                    SigaaUrl: "https://si3.ufc.br/sigaa/verTelaLogin.do"
+                );
+            }
+
+            return new PasswordResetResult(
+                false,
+                "Nenhum usuário foi encontrado para o CPF informado. Faça seu cadastro na aba 'Cadastrar'."
+            );
         }
 
-        var tokenBytes = RandomNumberGenerator.GetBytes(32);
-        var token = Convert.ToHexString(tokenBytes).ToLowerInvariant();
-
-        lock (_activeTokens)
+        if (isCpf)
         {
-            _activeTokens[token] = (user.Id, DateTime.UtcNow.AddHours(2));
+            return new PasswordResetResult(
+                false,
+                "Nenhum usuário foi encontrado para o CPF informado. Faça seu cadastro na aba 'Cadastrar'."
+            );
         }
-
-        await emailService.SendPasswordResetEmailAsync(user.Email, user.Name ?? user.Username, token);
-
-        // Mascara o e-mail para exibição segura (ex: j***@ufc.br)
-        var maskedEmail = MaskEmail(user.Email);
 
         return new PasswordResetResult(
-            true,
-            $"Instruções e código de recuperação foram enviados para o e-mail {maskedEmail}.",
-            GeneratedToken: token,
-            MaskedEmail: maskedEmail
+            false,
+            "Usuário ou e-mail não localizado no Solar. Se você possui vínculo acadêmico na UFC, informe seu CPF para consultar seu registro no SIGAA."
         );
     }
 
