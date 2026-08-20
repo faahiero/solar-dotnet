@@ -193,6 +193,7 @@ builder.Services.AddRateLimiter(options =>
 builder.Services.AddOpenApi();
 
 var app = builder.Build();
+var appStartTime = DateTime.UtcNow;
 
 // Inicialização de schema e usuários demo se o banco for novo/vazio
 using (var scope = app.Services.CreateScope())
@@ -329,16 +330,22 @@ app.MapGet("/health", async (SolarDbContext db) =>
     }
     catch { }
 
+    var memoryUsageMb = Math.Round(GC.GetTotalMemory(false) / (1024.0 * 1024.0), 2);
+    var uptime = DateTime.UtcNow - appStartTime;
+
     return Results.Ok(new
     {
         Status = dbOk ? "Healthy" : "Degraded",
         Database = dbOk ? "Connected" : "Disconnected",
         System = "Solar LMS Core (.NET 10)",
+        MemoryUsageMB = memoryUsageMb,
+        Uptime = $"{uptime.Days}d {uptime.Hours}h {uptime.Minutes}m {uptime.Seconds}s",
+        UptimeSeconds = (long)uptime.TotalSeconds,
         Timestamp = DateTime.UtcNow
     });
 })
 .WithName("HealthCheck")
-.WithSummary("Verifica a integridade do serviço e do banco de dados");
+.WithSummary("Verifica a integridade do serviço, telemetria de memória e banco de dados");
 
 app.MapGet("/healthz", () => Results.Ok(new { Status = "Healthy", Timestamp = DateTime.UtcNow }))
     .WithName("Healthz")

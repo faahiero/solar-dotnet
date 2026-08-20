@@ -44,6 +44,8 @@ public class WebApiIntegrationTests : IClassFixture<WebApplicationFactory<Progra
         content.Should().NotBeNull();
         content!.Status.Should().Be("Healthy");
         content.System.Should().Contain(".NET 10");
+        content.MemoryUsageMB.Should().BeGreaterThan(0);
+        content.Uptime.Should().NotBeNullOrWhiteSpace();
     }
 
     [Fact]
@@ -358,5 +360,5 @@ public class WebApiIntegrationTests : IClassFixture<WebApplicationFactory<Progra
         response.StatusCode.Should().NotBe(HttpStatusCode.TooManyRequests);
     }
 
-    private record HealthResponse(string Status, string System, DateTime Timestamp);
+    private record HealthResponse(string Status, string System, double MemoryUsageMB, string Uptime, DateTime Timestamp);
 }
