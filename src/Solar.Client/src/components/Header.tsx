@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import type { UserProfile } from '../types/auth';
 import { isAdminUser } from '../types/auth';
+import { useTranslation } from '../context/LanguageContext';
 
 interface HeaderProps {
   user: UserProfile;
@@ -19,15 +20,16 @@ export const Header = ({
   onCloseCurriculumUnitTab,
   onLogout
 }: HeaderProps) => {
-  const [clock, setClock] = useState(new Date().toLocaleTimeString('pt-BR'));
+  const { t, formatTime } = useTranslation();
+  const [clock, setClock] = useState(formatTime(new Date()));
   const [showShortcuts, setShowShortcuts] = useState(false);
 
   useEffect(() => {
     const timer = setInterval(() => {
-      setClock(new Date().toLocaleTimeString('pt-BR'));
+      setClock(formatTime(new Date()));
     }, 1000);
     return () => clearInterval(timer);
-  }, []);
+  }, [formatTime]);
 
   return (
     <header className="solar-official-header">
@@ -45,16 +47,16 @@ export const Header = ({
 
           <span className="server-clock-text">{clock}</span>
 
-          <a href="#acessibilidade" className="topbar-nav-link" onClick={(e) => { e.preventDefault(); alert('Modo de Acessibilidade Ativo (WCAG 2.1 AA)'); }}>
-            Acessibilidade
+          <a href="#acessibilidade" className="topbar-nav-link" onClick={(e) => { e.preventDefault(); alert(t('topbar_accessibility_active')); }}>
+            {t('topbar_accessibility')}
           </a>
 
           <a href="#ajuda" className="topbar-nav-link" onClick={(e) => { e.preventDefault(); alert('Central de Ajuda e Tutoriais do Solar LMS.'); }}>
-            Ajuda
+            {t('topbar_help')}
           </a>
 
           <button type="button" className="topbar-btn-sair" onClick={onLogout}>
-            Sair
+            {t('topbar_logout')}
           </button>
         </div>
       </div>
@@ -67,7 +69,7 @@ export const Header = ({
             className={`solar-main-tab ${activeTabKey === 'home' ? 'active' : ''}`}
             onClick={() => onSelectTab('home')}
           >
-            HOME
+            {t('nav_home').toUpperCase()}
           </button>
 
           {openCurriculumUnits.map((cu) => (
@@ -96,7 +98,7 @@ export const Header = ({
             className={`solar-main-tab ${activeTabKey === 'messages' ? 'active' : ''}`}
             onClick={() => onSelectTab('messages')}
           >
-            MENSAGENS
+            {t('nav_messages').toUpperCase()}
           </button>
 
           <button
@@ -104,7 +106,7 @@ export const Header = ({
             className={`solar-main-tab ${activeTabKey === 'enrollment' ? 'active' : ''}`}
             onClick={() => onSelectTab('enrollment')}
           >
-            MATRÍCULA
+            {t('nav_enrollment').toUpperCase()}
           </button>
 
           {isAdminUser(user) && (
@@ -115,7 +117,7 @@ export const Header = ({
               title="Dashboard de Observabilidade e Logs (Apenas Administradores)"
               style={{ backgroundColor: activeTabKey === 'logs' ? 'var(--solar-blue-mid, #005a9c)' : '#0f172a', color: '#38bdf8' }}
             >
-              🔭 LOGS (ADMIN)
+              🔭 {t('nav_logs').toUpperCase()} (ADMIN)
             </button>
           )}
         </div>
@@ -130,24 +132,19 @@ export const Header = ({
               Atalhos ▼
             </button>
             {showShortcuts && (
-              <div className="shortcuts-popup-modal">
-                <div className="shortcuts-popup-header">
-                  <strong>Atalhos</strong>
-                  <span onClick={() => setShowShortcuts(false)} style={{ cursor: 'pointer' }}>✕</span>
-                </div>
-                <div className="shortcuts-popup-body">
-                  <p style={{ fontSize: '0.8rem', color: '#666' }}>Sem atalhos cadastrados.</p>
-                </div>
+              <div className="shortcuts-menu-dropdown">
+                <a href="#sigaa" onClick={(e) => { e.preventDefault(); alert('Redirecionando para o Portal SIGAA UFC.'); }}>
+                  🔗 Portal SIGAA
+                </a>
+                <a href="#biblioteca" onClick={(e) => { e.preventDefault(); alert('Redirecionando para o Sistema de Bibliotecas UFC (Pergamum).'); }}>
+                  📚 Sistema de Bibliotecas
+                </a>
+                <a href="#certificados" onClick={(e) => { e.preventDefault(); alert('Consulta de Certificados de Extensão.'); }}>
+                  📜 Validar Certificado
+                </a>
               </div>
             )}
           </div>
-
-          <button type="button" className="btn-icon-action" title="Avaliar o Solar">
-            👍
-          </button>
-          <button type="button" className="btn-icon-action" title="Dúvidas Frequentes">
-            ❓
-          </button>
         </div>
       </div>
     </header>
