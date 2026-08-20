@@ -73,38 +73,86 @@ body {
    1. BARRA BRASIL (GOVERNO FEDERAL)
    ========================================================================== */
 .bar-brasil-gov {
-  background-color: #004b82;
-  height: 34px;
+  background-color: #f1f2f4;
+  height: 32px;
   display: flex;
-  align-items: center;
+  align-items: stretch;
   justify-content: center;
-  color: #ffffff;
-  font-size: 0.76rem;
+  border-bottom: 1px solid #d1d5db;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  font-size: 0.72rem;
   width: 100%;
+  box-sizing: border-box;
 }
 
 .bar-brasil-content {
   width: 100%;
-  max-width: 1600px;
-  padding: 0 24px;
+  max-width: 1180px;
+  padding: 0 16px;
   display: flex;
-  align-items: center;
+  align-items: stretch;
   justify-content: space-between;
+  box-sizing: border-box;
 }
 
-.bar-brasil-gov a {
-  color: #ffffff;
+.logo-brasil {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 16px;
+  height: 100%;
+  color: #1f2937;
   text-decoration: none;
+  font-weight: 700;
+  font-size: 0.74rem;
+  letter-spacing: 0.05em;
+  border-left: 1px solid #d1d5db;
+  border-right: 1px solid #d1d5db;
+  transition: background-color 0.15s ease;
+}
+
+.logo-brasil:hover {
+  background-color: #e5e7eb;
+  color: #111827;
 }
 
 .gov-links-list {
   display: flex;
   list-style: none;
-  gap: 16px;
+  margin: 0;
+  padding: 0;
+  height: 100%;
 }
 
-.gov-links-list a:hover {
-  text-decoration: underline;
+.gov-links-list li {
+  display: flex;
+  align-items: stretch;
+  margin: 0;
+  padding: 0;
+}
+
+.gov-links-list li a {
+  display: inline-flex;
+  align-items: center;
+  padding: 0 14px;
+  height: 100%;
+  color: #374151;
+  text-decoration: none;
+  font-weight: 600;
+  font-size: 0.72rem;
+  border-right: 1px solid #d1d5db;
+  transition: background-color 0.15s ease, color 0.15s ease;
+  white-space: nowrap;
+}
+
+.gov-links-list li:first-child a {
+  border-left: 1px solid #d1d5db;
+}
+
+.gov-links-list li a:hover {
+  background-color: #e5e7eb;
+  color: #111827;
+  text-decoration: none;
 }
 
 /* ==========================================================================
@@ -287,33 +335,250 @@ body {
 }
 
 .login-official-footer {
-  background: rgba(10, 28, 54, 0.88);
+  background: rgba(10, 28, 54, 0.95);
   backdrop-filter: blur(8px);
   border-top: 1px solid rgba(255, 255, 255, 0.12);
-  padding: 16px 24px;
+  padding: 12px 24px;
   text-align: center;
   font-size: 0.82rem;
   width: 100%;
   box-sizing: border-box;
+  position: relative;
+  z-index: 100;
+  margin-top: auto;
+  flex-shrink: 0;
 }
 
-.login-official-footer .footer-links-row {
+.login-official-footer .footer-dropup-trigger {
+  color: #ffffff;
+  background: none;
+}
+
+.login-official-footer .footer-dropup-trigger:hover,
+.login-official-footer .footer-dropup-trigger.active {
+  color: #ffffff;
+  background: rgba(255, 255, 255, 0.18);
+}
+
+/* Rodapé Logado: Tom leve, suave e compacto */
+.solar-official-footer {
+  background: #f8fafc;
+  border-top: 1px solid #e2e8f0;
+  padding: 8px 20px;
+  text-align: center;
+  font-size: 0.80rem;
+  width: 100%;
+  box-sizing: border-box;
+  position: relative;
+  z-index: 100;
+  margin-top: auto;
+  flex-shrink: 0;
+}
+
+.solar-official-footer .footer-dropup-trigger {
+  color: #475569;
+  background: none;
+  font-size: 0.80rem;
+  padding: 3px 8px;
+}
+
+.solar-official-footer .footer-dropup-trigger:hover,
+.solar-official-footer .footer-dropup-trigger.active {
+  color: #0284c7;
+  background: #e2e8f0;
+}
+
+.footer-links-row {
   display: flex;
   justify-content: center;
-  gap: 28px;
+  align-items: center;
+  gap: 24px;
   flex-wrap: wrap;
 }
 
-.login-official-footer .footer-links-row a {
-  color: #ffd242;
-  text-decoration: none;
-  font-weight: 500;
-  transition: opacity 0.15s;
+.footer-dropup-container {
+  position: relative;
+  display: inline-block;
 }
 
-.login-official-footer .footer-links-row a:hover {
-  text-decoration: underline;
-  opacity: 0.85;
+.footer-dropup-trigger {
+  border: none;
+  cursor: pointer;
+  border-radius: 4px;
+  transition: all 0.15s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-family: inherit;
+  font-weight: 500;
+}
+
+.footer-dropup-menu {
+  position: absolute;
+  bottom: calc(100% + 8px);
+  left: 50%;
+  transform: translateX(-50%);
+  background: #ffffff;
+  border-radius: 6px;
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3), 0 8px 10px -6px rgba(0, 0, 0, 0.2);
+  border: 1px solid #cbd5e1;
+  min-width: 230px;
+  padding: 6px 0;
+  z-index: 1000;
+  text-align: left;
+}
+
+.footer-dropup-menu::after {
+  content: '';
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  border-width: 6px;
+  border-style: solid;
+  border-color: #ffffff transparent transparent transparent;
+}
+
+.footer-dropup-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 16px;
+  font-size: 0.82rem;
+  color: #1e293b;
+  text-decoration: none;
+  font-weight: 500;
+  transition: background-color 0.15s ease, color 0.15s ease;
+  border: none;
+  background: none;
+  width: 100%;
+  box-sizing: border-box;
+  cursor: pointer;
+  text-align: left;
+}
+
+.footer-dropup-item:hover {
+  background-color: #f1f5f9;
+  color: #0284c7;
+}
+
+.footer-dropup-item .external-link-arrow {
+  color: #94a3b8;
+  font-size: 0.85rem;
+}
+
+/* Modal de Política de Privacidade */
+.modal-backdrop-custom {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+  padding: 16px;
+}
+
+.privacy-modal-card {
+  background: #ffffff;
+  border-radius: 12px;
+  width: 100%;
+  max-width: 720px;
+  max-height: 85vh;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.2);
+  overflow: hidden;
+  animation: modalFadeIn 0.2s ease-out;
+}
+
+@keyframes modalFadeIn {
+  from { opacity: 0; transform: scale(0.96); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+.privacy-modal-header {
+  padding: 16px 20px;
+  border-bottom: 1px solid #e2e8f0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: #f8fafc;
+}
+
+.btn-close-modal {
+  background: none;
+  border: none;
+  font-size: 1.1rem;
+  color: #64748b;
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 4px;
+}
+
+.btn-close-modal:hover {
+  background: #e2e8f0;
+  color: #0f172a;
+}
+
+.privacy-modal-body {
+  padding: 20px 24px;
+  overflow-y: auto;
+  font-size: 0.88rem;
+  line-height: 1.6;
+  color: #334155;
+}
+
+.privacy-section {
+  margin-bottom: 18px;
+}
+
+.privacy-section h4 {
+  margin: 0 0 6px 0;
+  font-size: 0.95rem;
+  color: #002b49;
+  font-weight: 700;
+}
+
+.privacy-section p {
+  margin: 0 0 8px 0;
+}
+
+.privacy-section ul {
+  margin: 6px 0 0 18px;
+  padding: 0;
+}
+
+.privacy-section li {
+  margin-bottom: 6px;
+}
+
+.privacy-modal-footer {
+  padding: 14px 20px;
+  border-top: 1px solid #e2e8f0;
+  background: #f8fafc;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.btn-privacy-confirm {
+  background: #0284c7;
+  color: #ffffff;
+  border: none;
+  padding: 8px 18px;
+  border-radius: 6px;
+  font-weight: 600;
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: background-color 0.15s;
+}
+
+.btn-privacy-confirm:hover {
+  background: #0369a1;
 }
 
 /* ==========================================================================
@@ -1194,33 +1459,6 @@ body {
   font-size: 0.9rem;
 }
 
-.solar-official-footer {
-  margin-top: auto;
-  flex-shrink: 0;
-  width: 100%;
-  background: #eceef0;
-  border-top: 1px solid var(--solar-border);
-  padding: 16px 24px;
-  text-align: center;
-  font-size: 0.82rem;
-  box-sizing: border-box;
-}
-
-.footer-links-row {
-  display: flex;
-  justify-content: center;
-  gap: 24px;
-}
-
-.footer-links-row a {
-  color: #475569;
-  text-decoration: none;
-}
-
-.footer-links-row a:hover {
-  text-decoration: underline;
-}
-
 /* Modais Popups */
 .solar-modal-backdrop {
   position: fixed;
@@ -2043,3 +2281,294 @@ body {
   gap: 10px;
 }
 
+
+/* ==========================================================================
+   WIZARD DE AUTOCADASTRO (Modernizado com Identidade Solar)
+   ========================================================================== */
+.solar-register-wrapper {
+  width: 100%;
+  max-width: 620px;
+  margin: 0 auto;
+  text-align: left;
+}
+
+.solar-register-tab-header {
+  display: inline-block;
+  margin-left: 0;
+}
+
+.solar-register-tab-label {
+  display: inline-block;
+  padding: 10px 24px;
+  background: #ffffff;
+  color: #204882;
+  font-size: 0.95rem;
+  font-weight: 700;
+  border-top-left-radius: 8px;
+  border-top-right-radius: 8px;
+  box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.05);
+}
+
+.solar-register-card {
+  background: #ffffff;
+  border-radius: 0 12px 12px 12px;
+  box-shadow: 0 15px 35px -5px rgba(0, 0, 0, 0.35);
+  padding: 24px 28px;
+  box-sizing: border-box;
+}
+
+.solar-register-stepper {
+  background: #f1f5f9;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  display: flex;
+  padding: 4px;
+  margin-bottom: 22px;
+  gap: 4px;
+}
+
+.solar-step-item {
+  flex: 1;
+  text-align: center;
+  padding: 8px 4px;
+  border-radius: 6px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: #64748b;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 5px;
+}
+
+.solar-step-title {
+  display: block;
+}
+
+.solar-step-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #cbd5e1;
+  transition: all 0.2s ease;
+}
+
+.solar-step-item.active {
+  background: #ffffff;
+  color: #204882;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+  font-weight: 700;
+}
+
+.solar-step-item.active .solar-step-dot {
+  background: #f59e0b;
+  width: 10px;
+  height: 10px;
+  box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.25);
+}
+
+.solar-step-item.completed {
+  color: #0369a1;
+}
+
+.solar-step-item.completed .solar-step-dot {
+  background: #16a34a;
+}
+
+.solar-register-error-banner {
+  background: #fee2e2;
+  color: #dc2626;
+  padding: 10px 14px;
+  border-radius: 6px;
+  font-size: 0.85rem;
+  margin-bottom: 18px;
+  border: 1px solid #fca5a5;
+  font-weight: 500;
+}
+
+.solar-step-panel {
+  animation: fadeIn 0.2s ease-out;
+}
+
+.solar-form-row {
+  display: flex;
+  align-items: center;
+  margin-bottom: 14px;
+  gap: 16px;
+}
+
+.solar-form-row-multi {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.solar-form-row-multi .solar-form-row {
+  margin-bottom: 0;
+}
+
+.solar-form-label {
+  width: 165px;
+  text-align: right;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #334155;
+  flex-shrink: 0;
+}
+
+.required-star {
+  color: #ef4444;
+  margin-right: 2px;
+  font-weight: 700;
+}
+
+.solar-form-control-col {
+  flex: 1;
+}
+
+.solar-form-input,
+.solar-form-select {
+  width: 100%;
+  padding: 9px 12px;
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+  font-size: 0.88rem;
+  background: #ffffff;
+  color: #0f172a;
+  transition: all 0.15s ease;
+  box-sizing: border-box;
+  font-family: inherit;
+}
+
+.solar-form-input:focus,
+.solar-form-select:focus {
+  border-color: #0284c7;
+  box-shadow: 0 0 0 3px rgba(2, 132, 199, 0.15);
+  outline: none;
+}
+
+.solar-form-input.readonly {
+  background: #f8fafc;
+  color: #64748b;
+  cursor: default;
+  border-color: #e2e8f0;
+}
+
+.solar-radio-group {
+  display: inline-flex;
+  gap: 10px;
+}
+
+.solar-radio-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 14px;
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  color: #475569;
+  transition: all 0.15s ease;
+}
+
+.solar-radio-chip input {
+  cursor: pointer;
+}
+
+.solar-radio-chip.selected {
+  background: #e0f2fe;
+  border-color: #0284c7;
+  color: #0369a1;
+}
+
+.solar-register-summary-box {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 16px;
+  margin-top: 16px;
+}
+
+.solar-register-actions-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 24px;
+  padding-top: 16px;
+  border-top: 1px solid #f1f5f9;
+}
+
+.solar-required-note {
+  font-size: 0.78rem;
+  font-style: italic;
+  color: #ef4444;
+  font-weight: 500;
+}
+
+.solar-buttons-group {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+.solar-btn-wizard-back {
+  background: #f1f5f9;
+  border: 1px solid #cbd5e1;
+  color: #475569;
+  padding: 9px 18px;
+  border-radius: 6px;
+  font-size: 0.88rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.solar-btn-wizard-back:hover:not(:disabled) {
+  background: #e2e8f0;
+  color: #0f172a;
+}
+
+.solar-btn-wizard-next,
+.solar-btn-wizard-complete {
+  background: linear-gradient(180deg, #fcd34d 0%, #f59e0b 100%);
+  border: 1px solid #d97706;
+  color: #78350f;
+  padding: 9px 24px;
+  border-radius: 6px;
+  font-size: 0.92rem;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 0 2px 4px rgba(245, 158, 11, 0.25);
+  transition: all 0.15s ease;
+}
+
+.solar-btn-wizard-next:hover:not(:disabled),
+.solar-btn-wizard-complete:hover:not(:disabled) {
+  background: linear-gradient(180deg, #fde68a 0%, #fbbf24 100%);
+  box-shadow: 0 4px 8px rgba(245, 158, 11, 0.35);
+  transform: translateY(-1px);
+}
+
+.solar-register-cancel-wrap {
+  margin-top: 14px;
+  text-align: center;
+}
+
+.solar-register-cancel-link {
+  background: none;
+  border: none;
+  color: #bae6fd;
+  font-size: 0.85rem;
+  font-weight: 500;
+  cursor: pointer;
+  text-decoration: underline;
+  transition: color 0.15s ease;
+}
+
+.solar-register-cancel-link:hover {
+  color: #ffffff;
+}
