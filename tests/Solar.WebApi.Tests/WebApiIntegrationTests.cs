@@ -270,5 +270,40 @@ public class WebApiIntegrationTests : IClassFixture<WebApplicationFactory<Progra
         content.Should().Contain("EXAM_CONTENT_LOCKED");
     }
 
+    [Fact]
+    public async Task Get_Cached_Agenda_Should_Return_200_OK_And_Fast_Response()
+    {
+        // Arrange
+        var client = _factory.CreateClient();
+
+        // Act
+        var firstResponse = await client.GetAsync("/api/v1/agenda");
+        var secondResponse = await client.GetAsync("/api/v1/agenda");
+
+        // Assert
+        firstResponse.StatusCode.Should().Be(HttpStatusCode.OK);
+        secondResponse.StatusCode.Should().Be(HttpStatusCode.OK);
+        var content = await secondResponse.Content.ReadAsStringAsync();
+        content.Should().Contain("Agosto 2026");
+    }
+
+    [Fact]
+    public async Task Get_Cached_Admin_Profiles_Should_Return_200_OK()
+    {
+        // Arrange
+        var client = _factory.CreateClient();
+
+        // Act
+        var firstResponse = await client.GetAsync("/api/v1/admin/profiles");
+        var secondResponse = await client.GetAsync("/api/v1/admin/profiles");
+
+        // Assert
+        firstResponse.StatusCode.Should().Be(HttpStatusCode.OK);
+        secondResponse.StatusCode.Should().Be(HttpStatusCode.OK);
+        var content = await secondResponse.Content.ReadAsStringAsync();
+        content.Should().Contain("tutor_distance");
+        content.Should().Contain("student");
+    }
+
     private record HealthResponse(string Status, string System, DateTime Timestamp);
 }

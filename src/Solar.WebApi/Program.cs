@@ -126,6 +126,14 @@ builder.Services.AddHostedService<AcademicMaintenanceWorker>();
 // SignalR para Chat e Notificações em tempo real
 builder.Services.AddSignalR();
 
+// Output Caching do ASP.NET Core (Respostas HTTP Instantâneas na Memória RAM)
+builder.Services.AddOutputCache(options =>
+{
+    options.AddBasePolicy(policy => policy.Expire(TimeSpan.FromSeconds(30)));
+    options.AddPolicy("AcademicPolicy", policy => policy.Expire(TimeSpan.FromMinutes(2)).Tag("academic"));
+    options.AddPolicy("StaticCatalogPolicy", policy => policy.Expire(TimeSpan.FromMinutes(10)).Tag("catalog"));
+});
+
 // OpenAPI / Swagger
 builder.Services.AddOpenApi();
 
@@ -232,6 +240,9 @@ app.UseSerilogRequestLogging(options =>
         return LogEventLevel.Information;
     };
 });
+
+// Habilitar Output Caching para respostas HTTP em cache no servidor
+app.UseOutputCache();
 
 // Servir o painel web interativo estático (wwwroot)
 app.UseDefaultFiles();
@@ -472,6 +483,7 @@ app.MapGet("/api/v1/lessons", () => Results.Ok(new[]
     new { Id = 1, Title = "Aula 1: Introdução ao Curso", Type = "File" },
     new { Id = 2, Title = "Aula 2: Arquitetura de Sistemas", Type = "Link" }
 }))
+.CacheOutput("AcademicPolicy")
 .WithName("GetLessons")
 .WithSummary("Retorna a lista de aulas da turma");
 
@@ -1468,6 +1480,7 @@ app.MapGet("/api/v1/agenda", () => Results.Ok(new
         new { Day = 24, Title = "Prazo de Entrega: Questionário Módulo 1" }
     }
 }))
+.CacheOutput("StaticCatalogPolicy")
 .WithName("GetAgenda")
 .WithSummary("Retorna os acontecimentos e eventos do calendário");
 
@@ -1885,6 +1898,7 @@ app.MapGet("/api/v1/admin/profiles", () => Results.Ok(new[]
     new { Id = 5, Name = "Coordenador", Code = "coordinator", Description = "Gestão da oferta de cursos e aprovação de alocações." },
     new { Id = 6, Name = "Administrador", Code = "admin", Description = "Gestão global de usuários, sistema e configurações." }
 }))
+.CacheOutput("StaticCatalogPolicy")
 .WithName("AdminGetProfiles")
 .WithSummary("Retorna a lista de perfis e papéis do sistema");
 
