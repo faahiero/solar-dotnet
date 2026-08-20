@@ -360,5 +360,55 @@ public class WebApiIntegrationTests : IClassFixture<WebApplicationFactory<Progra
         response.StatusCode.Should().NotBe(HttpStatusCode.TooManyRequests);
     }
 
+    [Fact]
+    public async Task Post_Login_Should_Issue_HttpOnly_Secure_Cookie()
+    {
+        // Arrange
+        var client = _factory.CreateClient();
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<SolarDbContext>();
+            var testUser = new User
+            {
+                Username = "cookieuser",
+                Nick = "CookieUser",
+                Email = "cookie@solar.ufc.br",
+                Cpf = "99887766554",
+                EncryptedPassword = DeviseLegacyPasswordHasher<User>.ComputeSha1("minhasenha123"),
+                Active = true
+            };
+            db.Users.Add(testUser);
+            await db.SaveChangesAsync();
+        }
+
+        var loginRequest = new LoginRequest { Login = "cookieuser", Password = "minhasenha123" };
+
+        // Act
+        var response = await client.PostAsJsonAsync("/api/v1/auth/login", loginRequest);
+
+        // Assert
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        response.Headers.Contains("Set-Cookie").Should().BeTrue();
+        var setCookie = response.Headers.GetValues("Set-Cookie").FirstOrDefault();
+        setCookie.Should().NotBeNull();
+        setCookie.Should().Contain("solar_access_token=");
+        setCookie.Should().Contain("httponly");
+    }
+
+    [Fact]
+    public async Task Post_Logout_Should_Clear_Cookie_And_Return_200_OK()
+    {
+        // Arrange
+        var client = _factory.CreateClient();
+
+        // Act
+        var response = await client.PostAsync("/api/v1/auth/logout", null);
+
+        // Assert
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        var content = await response.Content.ReadAsStringAsync();
+        content.Should().Contain("Sessão encerrada com sucesso");
+    }
+
     private record HealthResponse(string Status, string System, double MemoryUsageMB, string Uptime, DateTime Timestamp);
 }

@@ -42,12 +42,22 @@ export function App() {
     setActiveTabKey('home');
   };
 
-  const handleLogout = () => {
-    localStorage.removeItem('solar_session_token');
-    localStorage.removeItem('solar_user');
-    setUser(null);
-    setOpenCourses([]);
-    setActiveTabKey('home');
+  const handleLogout = async () => {
+    try {
+      const token = localStorage.getItem('solar_session_token');
+      await fetch('/api/v1/auth/logout', {
+        method: 'POST',
+        headers: token ? { Authorization: `Bearer ${token}` } : {}
+      });
+    } catch (err) {
+      console.error('Erro ao revogar sessão no servidor:', err);
+    } finally {
+      localStorage.removeItem('solar_session_token');
+      localStorage.removeItem('solar_user');
+      setUser(null);
+      setOpenCourses([]);
+      setActiveTabKey('home');
+    }
   };
 
   const handleOpenCurriculumUnit = (cu: CurriculumUnit) => {
