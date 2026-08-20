@@ -328,5 +328,21 @@ public class WebApiIntegrationTests : IClassFixture<WebApplicationFactory<Progra
         content.Should().Contain("RM404");
     }
 
+    [Fact]
+    public async Task Get_Any_Endpoint_Should_Include_Modern_Security_Headers()
+    {
+        // Arrange
+        var client = _factory.CreateClient();
+
+        // Act
+        var response = await client.GetAsync("/health");
+
+        // Assert
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        response.Headers.GetValues("X-Content-Type-Options").Should().Contain("nosniff");
+        response.Headers.GetValues("X-Frame-Options").Should().Contain("SAMEORIGIN");
+        response.Headers.GetValues("Referrer-Policy").Should().Contain("strict-origin-when-cross-origin");
+    }
+
     private record HealthResponse(string Status, string System, DateTime Timestamp);
 }
