@@ -11,6 +11,27 @@
   </head>
   <body>
     <div id="root"></div>
+
+    <!-- Integração Oficial VLibras (Acessibilidade em Língua Brasileira de Sinais) -->
+    <div vw class="enabled">
+      <div vw-access-button class="active"></div>
+      <div vw-plugin-wrapper>
+        <div class="vw-plugin-top-wrapper"></div>
+      </div>
+    </div>
+    <script src="https://vlibras.gov.br/app/vlibras-plugin.js"></script>
+    <script>
+      window.addEventListener('DOMContentLoaded', function () {
+        try {
+          if (window.VLibras) {
+            new window.VLibras.Widget('https://vlibras.gov.br/app');
+          }
+        } catch (e) {
+          console.warn('VLibras indisponível:', e);
+        }
+      });
+    </script>
+
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>
