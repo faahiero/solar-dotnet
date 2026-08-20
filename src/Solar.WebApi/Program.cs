@@ -237,7 +237,9 @@ using (var scope = app.Services.CreateScope())
                     Email = "aluno@solar.ufc.br",
                     Cpf = "12345678901",
                     EncryptedPassword = DeviseLegacyPasswordHasher<User>.ComputeSha1("senhadoteste123"),
-                    Active = true
+                    Active = true,
+                    Integrated = true,
+                    Selfregistration = false
                 },
                 new User
                 {
@@ -647,7 +649,11 @@ app.MapPost("/api/v1/auth/forgot-password", async (
     PasswordResetService resetService,
     IEmailNotificationService emailService) =>
 {
-    var result = await resetService.RequestPasswordResetAsync(request.EmailOrUsername, db, emailService);
+    var result = await resetService.RequestPasswordResetAsync(request.EmailOrUsernameOrCpf, db, emailService);
+    if (!result.Success && !result.IsIntegratedSigaa)
+    {
+        return Results.BadRequest(result);
+    }
     return Results.Ok(result);
 })
 .RequireRateLimiting("AuthLimiter")
@@ -660,13 +666,14 @@ app.MapPost("/api/v1/auth/reset-password", async (
     SolarDbContext db,
     PasswordResetService resetService) =>
 {
-    var result = await resetService.ResetPasswordAsync(request.Token, request.NewPassword, db);
+    var result = await resetService.ResetPasswordAsync(request.Token, request.NewPassword, request.PasswordConfirmation, db);
     if (!result.Success)
     {
         return Results.BadRequest(result);
     }
     return Results.Ok(result);
 })
+.RequireRateLimiting("AuthLimiter")
 .WithName("ResetPassword")
 .WithSummary("Valida o token e altera a senha do usuário");
 
