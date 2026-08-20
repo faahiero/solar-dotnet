@@ -8,6 +8,7 @@ import { MySolarHome } from './components/MySolarHome';
 import { CurriculumUnitView } from './components/CurriculumUnitView';
 import { MessagesView } from './components/MessagesView';
 import { AdminLogsView } from './components/AdminLogsView';
+import { OfficialFooter } from './components/OfficialFooter';
 import './index.css';
 
 interface OpenCourseTab {
@@ -131,21 +132,7 @@ export function App() {
       </main>
 
       {/* 3. Rodapé Oficial Solar LMS */}
-      <footer className="solar-official-footer">
-        <div className="footer-links-row">
-          <a href="#portais">Portais ▲</a>
-          <a href="#desenvolvimento">Desenvolvimento ▲</a>
-          <a href="#privacidade">Política de privacidade</a>
-          <a href="#faq">FAQ</a>
-          <a href="#idioma">Idioma ▲</a>
-        </div>
-      </footer>
-
-      {/* 4. Widget Flutuante VLibras */}
-      <div className="vlibras-badge">
-        <span style={{ fontSize: '0.75rem', fontWeight: 600 }}>Acessível com<br /><strong>VLibras</strong></span>
-        <div className="vlibras-hand-icon">🤟</div>
-      </div>
+      <OfficialFooter variant="app" />
     </div>
   );
 }

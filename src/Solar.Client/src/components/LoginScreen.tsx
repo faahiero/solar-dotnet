@@ -1,12 +1,16 @@
 import { useState } from 'react';
 import type { FormEvent } from 'react';
 import type { UserProfile, LoginResponse, VerifyCpfResponse } from '../types/auth';
+import { OfficialFooter } from './OfficialFooter';
+import { RegistrationWizard } from './RegistrationWizard';
+import { useTranslation } from '../context/LanguageContext';
 
 interface LoginScreenProps {
   onLoginSuccess: (user: UserProfile, token: string) => void;
 }
 
 export const LoginScreen = ({ onLoginSuccess }: LoginScreenProps) => {
+  const { t } = useTranslation();
   const [activeTab, setActiveTab] = useState<'signin' | 'signup'>('signin');
   const [login, setLogin] = useState('');
   const [password, setPassword] = useState('');
@@ -14,11 +18,16 @@ export const LoginScreen = ({ onLoginSuccess }: LoginScreenProps) => {
   const [loading, setLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [cpfResult, setCpfResult] = useState<VerifyCpfResponse | null>(null);
+  const [showWizard, setShowWizard] = useState(false);
+
+  // Estado para importação rápida SIGAA
+  const [sigaaPassword, setSigaaPassword] = useState('');
+  const [sigaaPasswordConf, setSigaaPasswordConf] = useState('');
 
   const handleLogin = async (e: FormEvent) => {
     e.preventDefault();
     if (!login || !password) {
-      setErrorMessage('Por favor, informe seu login e sua senha.');
+      setErrorMessage(t('login_error_required'));
       return;
     }
 
@@ -33,18 +42,18 @@ export const LoginScreen = ({ onLoginSuccess }: LoginScreenProps) => {
       });
 
       if (!response.ok) {
-        setErrorMessage('Usuário ou senha inválidos. Verifique suas credenciais.');
+        setErrorMessage(t('login_error_invalid'));
         return;
       }
 
       const data: LoginResponse = await response.json();
-      if (data.success && data.user) {
-        onLoginSuccess(data.user, data.token || 'valid_token');
+      if (data.success && data.user && data.token) {
+        onLoginSuccess(data.user, data.token);
       } else {
-        setErrorMessage(data.message || 'Falha na autenticação.');
+        setErrorMessage(data.message || t('login_error_invalid'));
       }
-    } catch (err) {
-      setErrorMessage('Erro de comunicação com o servidor: ' + err);
+    } catch {
+      setErrorMessage(t('login_error_invalid'));
     } finally {
       setLoading(false);
     }
@@ -53,22 +62,67 @@ export const LoginScreen = ({ onLoginSuccess }: LoginScreenProps) => {
   const handleVerifyCpf = async (e: FormEvent) => {
     e.preventDefault();
     if (!registerCpf) {
-      alert('Informe um CPF válido.');
+      alert(t('cpf_required'));
       return;
     }
 
     setLoading(true);
+    setErrorMessage(null);
+    setCpfResult(null);
+
     try {
       const response = await fetch('/api/v1/auth/verify-cpf', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ cpf: registerCpf.trim() })
       });
-
       const data: VerifyCpfResponse = await response.json();
-      setCpfResult(data);
-    } catch (err) {
-      alert('Erro ao verificar CPF: ' + err);
+      if (data.existsInLocal) {
+        setCpfResult(data);
+      } else {
+        // Redirecionamento direto para o formulário em 4 etapas idêntico ao Solar Ruby
+        setShowWizard(true);
+      }
+    } catch (err: any) {
+      setErrorMessage('Erro ao verificar CPF: ' + err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleImportSigaa = async (e: FormEvent) => {
+    e.preventDefault();
+    if (!sigaaPassword) {
+      setErrorMessage('Por favor, informe uma senha para o seu acesso.');
+      return;
+    }
+    if (sigaaPassword !== sigaaPasswordConf) {
+      setErrorMessage('A confirmação de senha não confere.');
+      return;
+    }
+
+    setLoading(true);
+    setErrorMessage(null);
+
+    try {
+      const response = await fetch('/api/v1/auth/import-sigaa', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          cpf: registerCpf.trim(),
+          password: sigaaPassword,
+          passwordConfirmation: sigaaPasswordConf
+        })
+      });
+
+      const data = await response.json();
+      if (response.ok && data.success && data.user && data.token) {
+        onLoginSuccess(data.user, data.token);
+      } else {
+        setErrorMessage(data.message || 'Erro ao importar cadastro do SIGAA.');
+      }
+    } catch (err: any) {
+      setErrorMessage('Erro ao conectar ao servidor: ' + err.message);
     } finally {
       setLoading(false);
     }
@@ -85,165 +139,229 @@ export const LoginScreen = ({ onLoginSuccess }: LoginScreenProps) => {
       <div className="bar-brasil-gov">
         <div className="bar-brasil-content">
           <a href="https://www.gov.br" target="_blank" rel="noreferrer" className="logo-brasil">
-            <img src="/assets/images/brazil.png" alt="Brasil" style={{ height: '14px', marginRight: '6px' }} />
-            <strong>BRASIL</strong>
+            <svg width="20" height="14" viewBox="0 0 20 14" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ borderRadius: '2px', flexShrink: 0 }}>
+              <rect width="20" height="14" fill="#009C3B"/>
+              <polygon points="10,1.5 18.5,7 10,12.5 1.5,7" fill="#FFDF00"/>
+              <circle cx="10" cy="7" r="3.5" fill="#002776"/>
+              <path d="M6.8 6.2C8 5.6 11.5 5.6 13.2 7.4" stroke="white" strokeWidth="0.7" fill="none"/>
+            </svg>
+            <span>{t('gov_brasil')}</span>
           </a>
           <ul className="gov-links-list">
-            <li><a href="#simplifique">Simplifique!</a></li>
-            <li><a href="#comunica">Comunica BR</a></li>
-            <li><a href="#participe">Participe</a></li>
-            <li><a href="#acesso">Acesso à informação</a></li>
-            <li><a href="#legislacao">Legislação</a></li>
-            <li><a href="#canais">Canais</a></li>
+            <li><a href="https://simplifique.gov.br" target="_blank" rel="noreferrer">{t('gov_simplifique')}</a></li>
+            <li><a href="https://www.gov.br/comunicabr" target="_blank" rel="noreferrer">{t('gov_comunica_br')}</a></li>
+            <li><a href="https://www.gov.br/participamaisbrasil" target="_blank" rel="noreferrer">{t('gov_participe')}</a></li>
+            <li><a href="https://acessoainformacao.gov.br" target="_blank" rel="noreferrer">{t('gov_acesso_informacao')}</a></li>
+            <li><a href="https://www.planalto.gov.br/legislacao" target="_blank" rel="noreferrer">{t('gov_legislacao')}</a></li>
+            <li><a href="https://www.gov.br/canais" target="_blank" rel="noreferrer">{t('gov_canais')}</a></li>
           </ul>
         </div>
       </div>
 
-      {/* 2. Container Central do Login */}
+      {/* 2. Container Central do Login / Cadastro */}
       <div className="login-central-wrapper">
         <div className="solar-brand-container">
           <img src="/assets/images/solar_logo_small_cursos.png" alt="Solar Cursos" className="solar-cursos-logo" />
-          <h2 className="solar-subtitle">Ambiente Virtual de Aprendizagem da Universidade Federal do Ceará</h2>
+          <h2 className="solar-subtitle">{t('solar_subtitle')}</h2>
         </div>
 
-        <div className="login-form-card">
-          <div className="login-tabs-header">
-            <button
-              type="button"
-              className={`login-tab-item ${activeTab === 'signin' ? 'active' : ''}`}
-              onClick={() => { setActiveTab('signin'); setErrorMessage(null); }}
-            >
-              Login
-            </button>
-            <button
-              type="button"
-              className={`login-tab-item ${activeTab === 'signup' ? 'active' : ''}`}
-              onClick={() => { setActiveTab('signup'); setErrorMessage(null); }}
-            >
-              Cadastrar
-            </button>
-          </div>
+        {showWizard ? (
+          /* WIZARD COMPLETO DE AUTOCADASTRO (4 ETAPAS) */
+          <RegistrationWizard
+            initialCpf={registerCpf}
+            onCancel={() => setShowWizard(false)}
+            onRegistrationSuccess={onLoginSuccess}
+          />
+        ) : (
+          /* CARD PRINCIPAL (LOGIN / VERIFICAÇÃO DE CPF) */
+          <div className="login-form-card">
+            <div className="login-tabs-header">
+              <button
+                type="button"
+                className={`login-tab-item ${activeTab === 'signin' ? 'active' : ''}`}
+                onClick={() => { setActiveTab('signin'); setErrorMessage(null); setCpfResult(null); }}
+              >
+                {t('login_tab')}
+              </button>
+              <button
+                type="button"
+                className={`login-tab-item ${activeTab === 'signup' ? 'active' : ''}`}
+                onClick={() => { setActiveTab('signup'); setErrorMessage(null); }}
+              >
+                {t('register_tab')}
+              </button>
+            </div>
 
-          <div className="login-card-content">
-            {errorMessage && (
-              <div className="login-flash-error">
-                ⚠️ {errorMessage}
-              </div>
-            )}
-
-            {activeTab === 'signin' ? (
-              <form onSubmit={handleLogin}>
-                <div className="login-field-box">
-                  <input
-                    type="text"
-                    value={login}
-                    onChange={(e) => setLogin(e.target.value)}
-                    placeholder="Digite seu login"
-                    className="solar-input-field"
-                    autoFocus
-                  />
+            <div className="login-card-content">
+              {errorMessage && (
+                <div className="login-flash-error">
+                  ⚠️ {errorMessage}
                 </div>
+              )}
 
-                <div className="login-field-box">
-                  <input
-                    type="password"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    placeholder="Digite sua senha"
-                    className="solar-input-field"
-                  />
-                </div>
-
-                <button type="submit" className="solar-btn-acessar" disabled={loading}>
-                  {loading ? 'Acessando...' : 'Acessar'}
-                </button>
-
-                <div className="login-forgot-pwd">
-                  <a href="#recuperar-senha" onClick={(e) => { e.preventDefault(); alert('Em ambiente de teste institucional, utilize o usuário alunoteste ou seu CPF.'); }}>
-                    Esqueceu a sua senha?
-                  </a>
-                </div>
-
-                <div className="login-quick-demo">
-                  <span style={{ fontSize: '0.74rem', color: '#555', display: 'block', marginBottom: '4px' }}>
-                    💡 Usuários de teste rápido:
-                  </span>
-                  <button type="button" className="quick-chip" onClick={() => fillDemo('alunoteste', 'senhadoteste123')}>
-                    alunoteste
-                  </button>
-                  <button type="button" className="quick-chip" onClick={() => fillDemo('aluno1', '123456')}>
-                    aluno1
-                  </button>
-                  <button type="button" className="quick-chip" onClick={() => fillDemo('prof', '123456')}>
-                    prof (123456)
-                  </button>
-                  <button type="button" className="quick-chip" onClick={() => fillDemo('prof.fabricio', 'solar123')}>
-                    prof.fabricio
-                  </button>
-                </div>
-              </form>
-            ) : (
-              <form onSubmit={handleVerifyCpf}>
-                <div className="login-field-box">
-                  <input
-                    type="text"
-                    value={registerCpf}
-                    onChange={(e) => setRegisterCpf(e.target.value)}
-                    placeholder="Digite seu CPF (000.000.000-00)"
-                    className="solar-input-field"
-                    autoFocus
-                  />
-                </div>
-
-                <button type="submit" className="solar-btn-acessar" style={{ background: 'linear-gradient(to bottom, #285596, #204882)', color: '#fff', border: '1px solid #143564' }} disabled={loading}>
-                  {loading ? 'Verificando...' : 'Verificar Cadastro no SIGAA'}
-                </button>
-
-                {cpfResult && (
-                  <div style={{ marginTop: '14px', fontSize: '0.85rem', textAlign: 'left' }}>
-                    {cpfResult.existsInLocal ? (
-                      <div style={{ background: '#fee2e2', color: '#dc2626', padding: '8px 10px', borderRadius: '4px' }}>
-                        ⚠️ {cpfResult.message}
-                      </div>
-                    ) : cpfResult.existsInSigaa ? (
-                      <div style={{ background: '#dcfce7', color: '#16a34a', padding: '8px 10px', borderRadius: '4px' }}>
-                        ✔ <strong>{cpfResult.name}</strong> ({cpfResult.email})<br />{cpfResult.message}
-                      </div>
-                    ) : (
-                      <div style={{ background: '#e0f2fe', color: '#0369a1', padding: '8px 10px', borderRadius: '4px' }}>
-                        ℹ️ {cpfResult.message}
-                      </div>
-                    )}
+              {activeTab === 'signin' ? (
+                /* FORMULÁRIO DE LOGIN */
+                <form onSubmit={handleLogin}>
+                  <div className="login-field-box">
+                    <input
+                      type="text"
+                      value={login}
+                      onChange={(e) => setLogin(e.target.value)}
+                      placeholder={t('user_placeholder')}
+                      className="solar-input-field"
+                      autoFocus
+                    />
                   </div>
-                )}
-              </form>
-            )}
+
+                  <div className="login-field-box">
+                    <input
+                      type="password"
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      placeholder={t('password_placeholder')}
+                      className="solar-input-field"
+                    />
+                  </div>
+
+                  <button type="submit" className="solar-btn-acessar" disabled={loading}>
+                    {loading ? t('btn_accessing') : t('btn_access')}
+                  </button>
+
+                  <div className="login-forgot-pwd">
+                    <a href="#recuperar-senha" onClick={(e) => { e.preventDefault(); alert('Em ambiente de teste institucional, utilize o usuário alunoteste ou seu CPF.'); }}>
+                      {t('forgot_password')}
+                    </a>
+                  </div>
+
+                  <div className="login-quick-demo">
+                    <span style={{ fontSize: '0.74rem', color: '#555', display: 'block', marginBottom: '4px' }}>
+                      💡 {t('quick_test_users')}
+                    </span>
+                    <button type="button" className="quick-chip" onClick={() => fillDemo('alunoteste', 'senhadoteste123')}>
+                      alunoteste
+                    </button>
+                    <button type="button" className="quick-chip" onClick={() => fillDemo('aluno1', '123456')}>
+                      aluno1
+                    </button>
+                    <button type="button" className="quick-chip" onClick={() => fillDemo('prof', '123456')}>
+                      prof (123456)
+                    </button>
+                    <button type="button" className="quick-chip" onClick={() => fillDemo('prof.fabricio', 'solar123')}>
+                      prof.fabricio
+                    </button>
+                  </div>
+                </form>
+              ) : (
+                /* ABA CADASTRAR: VERIFICAÇÃO DE CPF E OPÇÕES DE CADASTRO */
+                <div>
+                  <form onSubmit={handleVerifyCpf}>
+                    <div className="login-field-box">
+                      <input
+                        type="text"
+                        value={registerCpf}
+                        onChange={(e) => setRegisterCpf(e.target.value)}
+                        placeholder={t('cpf_placeholder')}
+                        className="solar-input-field"
+                        autoFocus
+                      />
+                    </div>
+
+                    <button
+                      type="submit"
+                      className="solar-btn-acessar"
+                      style={{ background: 'linear-gradient(to bottom, #285596, #204882)', color: '#fff', border: '1px solid #143564' }}
+                      disabled={loading}
+                    >
+                      {loading ? t('btn_verifying') : t('btn_verify_cpf')}
+                    </button>
+                  </form>
+
+                  {cpfResult && (
+                    <div style={{ marginTop: '16px', fontSize: '0.85rem', textAlign: 'left' }}>
+                      {cpfResult.existsInLocal ? (
+                        /* CPF JÁ EXISTE NO SOLAR */
+                        <div style={{ background: '#fee2e2', color: '#dc2626', padding: '12px 14px', borderRadius: '6px', border: '1px solid #fca5a5' }}>
+                          <p style={{ margin: '0 0 6px 0', fontWeight: 600 }}>⚠️ {cpfResult.message}</p>
+                          <button
+                            type="button"
+                            className="quick-chip"
+                            style={{ background: '#dc2626', color: '#fff', border: 'none', padding: '6px 12px', marginTop: '4px' }}
+                            onClick={() => { setActiveTab('signin'); setLogin(registerCpf); }}
+                          >
+                            Ir para a tela de Login
+                          </button>
+                        </div>
+                      ) : cpfResult.existsInSigaa ? (
+                        /* LOCALIZADO NO SIGAA -> IMPORTAÇÃO RÁPIDA */
+                        <div style={{ background: '#dcfce7', color: '#166534', padding: '14px', borderRadius: '6px', border: '1px solid #86efac' }}>
+                          <p style={{ margin: '0 0 6px 0', fontWeight: 700 }}>
+                            ✔ Vínculo Localizado no SIGAA: {cpfResult.name}
+                          </p>
+                          <p style={{ margin: '0 0 10px 0', fontSize: '0.8rem', color: '#15803d' }}>
+                            Defina uma senha para importar seus dados acadêmicos e liberar seu acesso:
+                          </p>
+                          <form onSubmit={handleImportSigaa}>
+                            <input
+                              type="password"
+                              className="solar-input-field"
+                              placeholder="Crie sua senha de acesso"
+                              value={sigaaPassword}
+                              onChange={(e) => setSigaaPassword(e.target.value)}
+                              style={{ marginBottom: '8px' }}
+                              required
+                            />
+                            <input
+                              type="password"
+                              className="solar-input-field"
+                              placeholder="Confirme sua senha"
+                              value={sigaaPasswordConf}
+                              onChange={(e) => setSigaaPasswordConf(e.target.value)}
+                              style={{ marginBottom: '10px' }}
+                              required
+                            />
+                            <button
+                              type="submit"
+                              className="solar-btn-acessar"
+                              style={{ background: '#16a34a', color: '#fff', border: 'none' }}
+                              disabled={loading}
+                            >
+                              {loading ? 'Sincronizando...' : '✔ Importar e Entrar no Solar'}
+                            </button>
+                          </form>
+                        </div>
+                      ) : (
+                        /* NÃO LOCALIZADO NO SIGAA -> AUTOCADASTRO COMPLETO */
+                        <div style={{ background: '#e0f2fe', color: '#0369a1', padding: '14px', borderRadius: '6px', border: '1px solid #7dd3fc' }}>
+                          <p style={{ margin: '0 0 8px 0', fontWeight: 600 }}>ℹ️ {cpfResult.message}</p>
+                          <p style={{ margin: '0 0 12px 0', fontSize: '0.8rem' }}>
+                            Você pode realizar seu cadastro individual em 4 etapas rápidas.
+                          </p>
+                          <button
+                            type="button"
+                            className="solar-btn-acessar"
+                            style={{ background: 'var(--solar-blue-main)', color: '#fff', border: 'none' }}
+                            onClick={() => setShowWizard(true)}
+                          >
+                            📝 Iniciar Formulário de Cadastro (4 Etapas)
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
           </div>
-        </div>
+        )}
 
         {/* Logos Oficiais UFC e UFC Virtual */}
         <div className="login-institutional-logos">
-          <img src="/assets/images/logo_ufc.png" alt="UFC" style={{ height: '48px', filter: 'brightness(0) invert(1)' }} />
-          <img src="/assets/images/ufcVirtual.png" alt="UFC Virtual" style={{ height: '44px', filter: 'brightness(0) invert(1)' }} />
+          <img src="/assets/images/logos_brancos6.png" alt="UFC e UFC Virtual" style={{ width: '290px', height: 'auto', display: 'block' }} />
         </div>
       </div>
 
       {/* 3. Rodapé Oficial da Página de Login */}
-      <footer className="login-official-footer">
-        <div className="footer-links-row">
-          <a href="#portais">Portais ▲</a>
-          <a href="#desenvolvimento">Desenvolvimento ▲</a>
-          <a href="#privacidade">Política de privacidade</a>
-          <a href="#ajuda">Ajuda ▲</a>
-          <a href="#idioma">Idioma ▲</a>
-        </div>
-      </footer>
-
-      {/* Widget VLibras Flutuante */}
-      <div className="vlibras-badge">
-        <span style={{ fontSize: '0.75rem', fontWeight: 600 }}>Acessível com<br /><strong>VLibras</strong></span>
-        <div className="vlibras-hand-icon">🤟</div>
-      </div>
+      <OfficialFooter variant="login" />
     </div>
   );
 };

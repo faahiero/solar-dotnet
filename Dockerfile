@@ -49,9 +49,9 @@ RUN dotnet publish src/Solar.WebApi/Solar.WebApi.csproj \
     --no-restore
 
 # ----------------------------------------------------
-# STAGE 3: Imagem Final de Runtime (Distroless / Non-Root)
+# STAGE 3: Imagem Final de Runtime (Distroless com Suporte a ICU/i18n)
 # ----------------------------------------------------
-FROM mcr.microsoft.com/dotnet/aspnet:10.0-noble-chiseled AS final
+FROM mcr.microsoft.com/dotnet/aspnet:10.0-noble-chiseled-extra AS final
 WORKDIR /app
 
 # Copia artefato publicado

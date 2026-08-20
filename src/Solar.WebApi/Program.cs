@@ -1,3 +1,5 @@
+using System.Globalization;
+using Microsoft.AspNetCore.Localization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.AspNetCore.ResponseCompression;
@@ -109,6 +111,8 @@ builder.Services.AddSingleton<IEmailNotificationService, ConsoleEmailNotificatio
 builder.Services.AddScoped<PasswordResetService>();
 builder.Services.AddScoped<CalculateStudentGradesUseCase>();
 builder.Services.AddScoped<AuthenticateUserUseCase>();
+builder.Services.AddScoped<PasswordHasher<User>>();
+builder.Services.AddScoped<RegisterUserUseCase>();
 builder.Services.AddScoped<IPasswordHasher<User>, DeviseLegacyPasswordHasher<User>>();
 builder.Services.AddSingleton<IJwtTokenService, JwtTokenService>();
 
@@ -126,6 +130,16 @@ builder.Services.AddSingleton<IAcademicReportService, AcademicPdfReportService>(
 builder.Services.AddSingleton<IBackgroundTaskQueue>(new DefaultBackgroundTaskQueue(200));
 builder.Services.AddHostedService<QueuedHostedService>();
 builder.Services.AddHostedService<AcademicMaintenanceWorker>();
+
+// Suporte a Internacionalização (i18n) em Português e Inglês
+builder.Services.AddLocalization();
+builder.Services.Configure<RequestLocalizationOptions>(options =>
+{
+    var supportedCultures = new[] { "pt-BR", "pt", "en-US", "en" };
+    options.SetDefaultCulture("pt-BR")
+           .AddSupportedCultures(supportedCultures)
+           .AddSupportedUICultures(supportedCultures);
+});
 
 // SignalR para Chat e Notificações em tempo real
 builder.Services.AddSignalR();
@@ -303,6 +317,9 @@ app.UseMiddleware<SecurityHeadersMiddleware>();
 // Proteção Criptográfica de Amarração de Dispositivo / IP (Device Fingerprint)
 app.UseMiddleware<DeviceFingerprintMiddleware>();
 
+// Suporte a Internacionalização (i18n): pt-BR e en-US
+app.UseRequestLocalization();
+
 // Compressão Dinâmica de Resposta HTTP (Brotli/Gzip)
 app.UseResponseCompression();
 
@@ -374,6 +391,25 @@ app.MapGet("/readyz", async (SolarDbContext db) =>
 })
 .WithName("Readyz")
 .WithSummary("Readiness Probe para tráfego");
+
+// Consulta de Idiomas e Culturas Suportadas (i18n)
+app.MapGet("/api/v1/locales", (HttpContext httpContext) =>
+{
+    var reqCulture = httpContext.Features.Get<IRequestCultureFeature>();
+    var currentCulture = reqCulture?.RequestCulture.UICulture.Name ?? CultureInfo.CurrentUICulture.Name;
+    return Results.Ok(new
+    {
+        CurrentCulture = currentCulture,
+        SupportedCultures = new[]
+        {
+            new { Code = "pt-BR", Name = "Português (Brasil)", Flag = "🇧🇷", IsDefault = true },
+            new { Code = "en-US", Name = "English (USA)", Flag = "🇺🇸", IsDefault = false }
+        }
+    });
+})
+.WithName("GetLocales")
+.WithSummary("Retorna os idiomas e culturas suportadas pelo Solar LMS (.NET 10)")
+.CacheOutput(p => p.SetVaryByHeader("Accept-Language").SetVaryByQuery("culture", "locale", "ui-culture"));
 
 // Autenticação com suporte aos hashes legados Devise (SHA1 / SHA1-MD5 e busca por Username/CPF)
 app.MapPost("/api/v1/auth/login", async (
@@ -503,6 +539,106 @@ app.MapPost("/api/v1/auth/verify-cpf", async (
 })
 .WithName("VerifyCpf")
 .WithSummary("Verifica CPF para autocadastro no Solar LMS ou importação SIGAA");
+
+// Autocadastro de Usuário (espelha Devise::UsersController#create)
+app.MapPost("/api/v1/auth/register", async (
+    RegisterUserRequest request,
+    RegisterUserUseCase registerUseCase,
+    IJwtTokenService jwtTokenService,
+    HttpContext httpContext) =>
+{
+    var clientIp = httpContext.Connection.RemoteIpAddress?.ToString() ?? "127.0.0.1";
+    var userAgent = httpContext.Request.Headers.UserAgent.ToString();
+    var enrichedRequest = request with { RemoteIp = clientIp };
+
+    var result = await registerUseCase.ExecuteAsync(enrichedRequest);
+    if (!result.Success || result.User == null)
+    {
+        return Results.BadRequest(result);
+    }
+
+    // Gera token JWT amarrado ao dispositivo
+    var userSummary = new UserSummaryDto(
+        Id: result.User.Id,
+        Username: result.User.Username,
+        Name: result.User.Name,
+        Email: result.User.Email,
+        Cpf: result.User.Cpf,
+        Role: "student"
+    );
+    var tokenResponse = jwtTokenService.GenerateToken(userSummary, expirationSeconds: 86400, clientIp: clientIp, userAgent: userAgent);
+    var token = tokenResponse.AccessToken;
+
+    // Emite Cookie blindado HttpOnly + Secure + SameSite=Strict
+    httpContext.Response.Cookies.Append("solar_access_token", token, new CookieOptions
+    {
+        HttpOnly = true,
+        Secure = false,
+        SameSite = SameSiteMode.Strict,
+        Expires = DateTimeOffset.UtcNow.AddDays(1),
+        Path = "/"
+    });
+
+    return Results.Ok(result with { Token = token });
+})
+.RequireRateLimiting("AuthLimiter")
+.WithName("RegisterUser")
+.WithSummary("Realiza o autocadastro completo de um novo usuário no Solar LMS");
+
+// Importação e Cadastro via SIGAA
+app.MapPost("/api/v1/auth/import-sigaa", async (
+    ImportSigaaUserRequest request,
+    RegisterUserUseCase registerUseCase,
+    ISigaaAcademicService sigaaService,
+    IJwtTokenService jwtTokenService,
+    HttpContext httpContext) =>
+{
+    var clientIp = httpContext.Connection.RemoteIpAddress?.ToString() ?? "127.0.0.1";
+    var userAgent = httpContext.Request.Headers.UserAgent.ToString();
+    var enrichedRequest = request with { RemoteIp = clientIp };
+
+    var sanitizedCpf = request.Cpf.Replace(".", "").Replace("-", "").Trim();
+    var sigaaData = await sigaaService.FindUserByCpfAsync(sanitizedCpf);
+    if (sigaaData == null)
+    {
+        return Results.BadRequest(new RegisterUserResponse
+        {
+            Success = false,
+            Message = "Vínculo acadêmico não localizado no SIGAA para este CPF."
+        });
+    }
+
+    var result = await registerUseCase.ImportFromSigaaAsync(enrichedRequest, sigaaData.Name, sigaaData.Email, sigaaData.EnrollmentCode);
+    if (!result.Success || result.User == null)
+    {
+        return Results.BadRequest(result);
+    }
+
+    var userSummary = new UserSummaryDto(
+        Id: result.User.Id,
+        Username: result.User.Username,
+        Name: result.User.Name,
+        Email: result.User.Email,
+        Cpf: result.User.Cpf,
+        Role: result.User.ProfileTypes == 4 ? "teacher" : "student"
+    );
+    var tokenResponse = jwtTokenService.GenerateToken(userSummary, expirationSeconds: 86400, clientIp: clientIp, userAgent: userAgent);
+    var token = tokenResponse.AccessToken;
+
+    httpContext.Response.Cookies.Append("solar_access_token", token, new CookieOptions
+    {
+        HttpOnly = true,
+        Secure = false,
+        SameSite = SameSiteMode.Strict,
+        Expires = DateTimeOffset.UtcNow.AddDays(1),
+        Path = "/"
+    });
+
+    return Results.Ok(result with { Token = token });
+})
+.RequireRateLimiting("AuthLimiter")
+.WithName("ImportSigaaUser")
+.WithSummary("Sincroniza e cria o usuário a partir dos dados institucionais do SIGAA");
 
 // Solicitação de Recuperação de Senha (Esqueci minha senha - Devise Passwords)
 app.MapPost("/api/v1/auth/forgot-password", async (
