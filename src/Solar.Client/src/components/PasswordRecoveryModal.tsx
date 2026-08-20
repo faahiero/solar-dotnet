@@ -4,16 +4,18 @@ import { useTranslation } from '../context/LanguageContext';
 interface PasswordRecoveryModalProps {
   onBackToLogin: () => void;
   onPasswordResetSuccess: (usernameOrEmail: string) => void;
+  onGoToRegister?: () => void;
 }
 
 export const PasswordRecoveryModal: React.FC<PasswordRecoveryModalProps> = ({
   onBackToLogin,
-  onPasswordResetSuccess
+  onPasswordResetSuccess,
+  onGoToRegister
 }) => {
   const { t } = useTranslation();
   const [viewMode, setViewMode] = useState<'request' | 'reset'>('request');
   const [loading, setLoading] = useState(false);
-  const [cpfOrUser, setCpfOrUser] = useState('');
+  const [cpf, setCpf] = useState('');
   const [resetToken, setResetToken] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [passwordConfirmation, setPasswordConfirmation] = useState('');
@@ -21,11 +23,34 @@ export const PasswordRecoveryModal: React.FC<PasswordRecoveryModalProps> = ({
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [isSigaaInfo, setIsSigaaInfo] = useState(false);
+  const [sigaaUrl, setSigaaUrl] = useState<string | null>(null);
+  const [needsRegistrationFirst, setNeedsRegistrationFirst] = useState(false);
+
+  // Formatação automática de CPF (000.000.000-00)
+  const handleCpfChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const raw = e.target.value;
+    // Se for e-mail ou nome de usuário (contém @ ou letras), permite livre
+    if (/[a-zA-Z@]/.test(raw)) {
+      setCpf(raw);
+      return;
+    }
+
+    const numbers = raw.replace(/\D/g, '').slice(0, 11);
+    let formatted = numbers;
+    if (numbers.length > 9) {
+      formatted = `${numbers.slice(0, 3)}.${numbers.slice(3, 6)}.${numbers.slice(6, 9)}-${numbers.slice(9)}`;
+    } else if (numbers.length > 6) {
+      formatted = `${numbers.slice(0, 3)}.${numbers.slice(3, 6)}.${numbers.slice(6)}`;
+    } else if (numbers.length > 3) {
+      formatted = `${numbers.slice(0, 3)}.${numbers.slice(3)}`;
+    }
+    setCpf(formatted);
+  };
 
   const handleRequestToken = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!cpfOrUser.trim()) {
-      setErrorMessage('Informe seu CPF, login ou e-mail cadastrado.');
+    if (!cpf.trim()) {
+      setErrorMessage(t('cpf_required') || 'Informe o seu CPF cadastrado.');
       return;
     }
 
@@ -33,12 +58,14 @@ export const PasswordRecoveryModal: React.FC<PasswordRecoveryModalProps> = ({
     setErrorMessage(null);
     setSuccessMessage(null);
     setIsSigaaInfo(false);
+    setSigaaUrl(null);
+    setNeedsRegistrationFirst(false);
 
     try {
       const response = await fetch('/api/v1/auth/forgot-password', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ emailOrUsernameOrCpf: cpfOrUser.trim() })
+        body: JSON.stringify({ emailOrUsernameOrCpf: cpf.trim() })
       });
 
       const data = await response.json();
@@ -46,6 +73,8 @@ export const PasswordRecoveryModal: React.FC<PasswordRecoveryModalProps> = ({
       if (data.isIntegratedSigaa) {
         setIsSigaaInfo(true);
         setErrorMessage(data.message);
+        setSigaaUrl(data.sigaaUrl || 'https://si3.ufc.br/sigaa/verTelaLogin.do');
+        setNeedsRegistrationFirst(Boolean(data.needsRegistrationFirst));
       } else if (response.ok && data.success) {
         setSuccessMessage(data.message);
         if (data.generatedToken) {
@@ -94,7 +123,7 @@ export const PasswordRecoveryModal: React.FC<PasswordRecoveryModalProps> = ({
 
       if (response.ok && data.success) {
         alert('Senha redefinida com sucesso! Você já pode efetuar o login.');
-        onPasswordResetSuccess(cpfOrUser);
+        onPasswordResetSuccess(cpf);
       } else {
         setErrorMessage(data.message || 'Erro ao redefinir a senha.');
       }
@@ -109,7 +138,7 @@ export const PasswordRecoveryModal: React.FC<PasswordRecoveryModalProps> = ({
     <div className="solar-password-recovery-wrapper">
       <div className="solar-password-recovery-card">
         {viewMode === 'request' ? (
-          /* MODO 1: SOLICITAÇÃO POR CPF / EMAIL */
+          /* MODO 1: SOLICITAÇÃO POR CPF */
           <div>
             <h2 className="solar-pwd-title">
               {t('forgot_password')}
@@ -117,7 +146,7 @@ export const PasswordRecoveryModal: React.FC<PasswordRecoveryModalProps> = ({
 
             <div className="solar-pwd-instructions">
               <p>
-                Informe o seu <strong>CPF</strong> ou <strong>nome de usuário</strong> cadastrado para receber as instruções e o código de recuperação por e-mail.
+                Informe o seu <strong>CPF</strong> cadastrado para receber instruções de recuperação de senha por e-mail.
               </p>
               <p className="solar-pwd-sigaa-notice">
                 ℹ️ <em>Caso você seja aluno ou professor integrado do SIGAA, sua senha deve ser recuperada diretamente no SIGAA.</em>
@@ -126,7 +155,35 @@ export const PasswordRecoveryModal: React.FC<PasswordRecoveryModalProps> = ({
 
             {errorMessage && (
               <div className={`solar-pwd-alert ${isSigaaInfo ? 'info' : 'error'}`}>
-                {isSigaaInfo ? '🏛️ ' : '⚠️ '} {errorMessage}
+                <div style={{ marginBottom: isSigaaInfo ? '8px' : '0' }}>
+                  {isSigaaInfo ? '🏛️ ' : '⚠️ '} {errorMessage}
+                </div>
+
+                {isSigaaInfo && sigaaUrl && (
+                  <div style={{ marginTop: '10px', paddingTop: '8px', borderTop: '1px solid rgba(0,0,0,0.1)' }}>
+                    <a
+                      href={sigaaUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="solar-pwd-sigaa-link"
+                    >
+                      🔗 Acessar Portal do SIGAA / SI3 (Abrir em nova aba)
+                    </a>
+                  </div>
+                )}
+
+                {needsRegistrationFirst && onGoToRegister && (
+                  <div style={{ marginTop: '10px', textAlign: 'center' }}>
+                    <button
+                      type="button"
+                      className="solar-btn-pwd-action"
+                      onClick={onGoToRegister}
+                      style={{ fontSize: '0.82rem', padding: '6px 14px' }}
+                    >
+                      Ir para a aba "Cadastrar"
+                    </button>
+                  </div>
+                )}
               </div>
             )}
 
@@ -139,7 +196,10 @@ export const PasswordRecoveryModal: React.FC<PasswordRecoveryModalProps> = ({
                   <button
                     type="button"
                     className="solar-btn-pwd-action"
-                    onClick={() => setViewMode('reset')}
+                    onClick={() => {
+                      setErrorMessage(null);
+                      setViewMode('reset');
+                    }}
                   >
                     🔑 Inserir Código e Criar Nova Senha
                   </button>
@@ -148,12 +208,13 @@ export const PasswordRecoveryModal: React.FC<PasswordRecoveryModalProps> = ({
             ) : (
               <form onSubmit={handleRequestToken}>
                 <div className="solar-pwd-field">
+                  <label className="solar-pwd-label">CPF (somente números ou formatado):</label>
                   <input
                     type="text"
                     className="solar-pwd-input"
-                    placeholder="Digite seu CPF, usuário ou e-mail"
-                    value={cpfOrUser}
-                    onChange={(e) => setCpfOrUser(e.target.value)}
+                    placeholder="000.000.000-00"
+                    value={cpf}
+                    onChange={handleCpfChange}
                     autoFocus
                     required
                   />
@@ -256,7 +317,10 @@ export const PasswordRecoveryModal: React.FC<PasswordRecoveryModalProps> = ({
                 <button
                   type="button"
                   className="solar-btn-pwd-back"
-                  onClick={() => setViewMode('request')}
+                  onClick={() => {
+                    setErrorMessage(null);
+                    setViewMode('request');
+                  }}
                   disabled={loading}
                 >
                   Voltar

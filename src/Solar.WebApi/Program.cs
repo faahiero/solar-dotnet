@@ -9,6 +9,7 @@ using Microsoft.EntityFrameworkCore;
 using Solar.Application.Administration;
 using Solar.Application.Auth;
 using Solar.Application.Grading;
+using Solar.Application.Integrations.Sigaa;
 using Solar.Application.Reports;
 using Solar.Domain.Academic;
 using Solar.Domain.Administration;
@@ -647,9 +648,10 @@ app.MapPost("/api/v1/auth/forgot-password", async (
     ForgotPasswordRequest request,
     SolarDbContext db,
     PasswordResetService resetService,
-    IEmailNotificationService emailService) =>
+    IEmailNotificationService emailService,
+    ISigaaAcademicService sigaaService) =>
 {
-    var result = await resetService.RequestPasswordResetAsync(request.EmailOrUsernameOrCpf, db, emailService);
+    var result = await resetService.RequestPasswordResetAsync(request.EmailOrUsernameOrCpf, db, emailService, sigaaService);
     if (!result.Success && !result.IsIntegratedSigaa)
     {
         return Results.BadRequest(result);
