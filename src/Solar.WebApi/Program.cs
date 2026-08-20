@@ -269,6 +269,9 @@ app.UseSerilogRequestLogging(options =>
     };
 });
 
+// Cabeçalhos de Segurança HTTP Modernos (OWASP / MEC)
+app.UseMiddleware<SecurityHeadersMiddleware>();
+
 // Compressão Dinâmica de Resposta HTTP (Brotli/Gzip)
 app.UseResponseCompression();
 
