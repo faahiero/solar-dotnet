@@ -1,3 +1,4 @@
+using System.Collections.Concurrent;
 using System.Security.Claims;
 using System.Security.Cryptography;
 using System.Text;
@@ -24,7 +25,7 @@ public class JwtTokenService : IJwtTokenService
         _config = config ?? new JwtTokenConfig();
     }
 
-    public OAuthTokenResponse GenerateToken(UserSummaryDto user, int expirationSeconds = 3600)
+    public OAuthTokenResponse GenerateToken(UserSummaryDto user, int expirationSeconds = 3600, string? clientIp = null, string? userAgent = null)
     {
         var handler = new JsonWebTokenHandler();
         var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_config.SecretKey));
@@ -40,6 +41,11 @@ public class JwtTokenService : IJwtTokenService
             ["role"] = user.Role,
             ["cpf"] = user.Cpf ?? ""
         };
+
+        if (!string.IsNullOrEmpty(clientIp) || !string.IsNullOrEmpty(userAgent))
+        {
+            claims["dfp"] = ComputeFingerprint(clientIp, userAgent);
+        }
 
         var descriptor = new SecurityTokenDescriptor
         {
@@ -70,7 +76,7 @@ public class JwtTokenService : IJwtTokenService
         );
     }
 
-    public OAuthTokenResponse? RefreshToken(string refreshToken, UserSummaryDto user, int expirationSeconds = 3600)
+    public OAuthTokenResponse? RefreshToken(string refreshToken, UserSummaryDto user, int expirationSeconds = 3600, string? clientIp = null, string? userAgent = null)
     {
         lock (_activeRefreshTokens)
         {
@@ -88,6 +94,57 @@ public class JwtTokenService : IJwtTokenService
             _activeRefreshTokens.Remove(refreshToken);
         }
 
-        return GenerateToken(user, expirationSeconds);
+        return GenerateToken(user, expirationSeconds, clientIp, userAgent);
+    }
+
+    public bool ValidateDeviceFingerprint(string token, string? clientIp, string? userAgent)
+    {
+        try
+        {
+            var handler = new JsonWebTokenHandler();
+            var jwt = handler.ReadJsonWebToken(token);
+            if (jwt.TryGetClaim("dfp", out var claim))
+            {
+                var expected = ComputeFingerprint(clientIp, userAgent);
+                return string.Equals(claim.Value, expected, StringComparison.OrdinalIgnoreCase);
+            }
+            return true; // Token legado ou sem amarração explícita é aceito
+        }
+        catch
+        {
+            return false;
+        }
+    }
+
+    private static readonly ConcurrentDictionary<string, DateTime> _revokedTokens = new();
+
+    public void RevokeToken(string token)
+    {
+        if (!string.IsNullOrWhiteSpace(token))
+        {
+            _revokedTokens.TryAdd(token, DateTime.UtcNow.AddDays(1));
+        }
+    }
+
+    public bool IsTokenRevoked(string token)
+    {
+        if (string.IsNullOrWhiteSpace(token)) return true;
+        if (_revokedTokens.TryGetValue(token, out var expiresAt))
+        {
+            if (DateTime.UtcNow > expiresAt)
+            {
+                _revokedTokens.TryRemove(token, out _);
+                return false;
+            }
+            return true;
+        }
+        return false;
+    }
+
+    public static string ComputeFingerprint(string? clientIp, string? userAgent)
+    {
+        var raw = $"{clientIp?.Trim() ?? "unknown"}|{userAgent?.Trim() ?? "unknown"}";
+        var hash = SHA256.HashData(Encoding.UTF8.GetBytes(raw));
+        return Convert.ToHexString(hash).ToLowerInvariant()[..16];
     }
 }

@@ -300,6 +300,9 @@ app.UseSerilogRequestLogging(options =>
 // Cabeçalhos de Segurança HTTP Modernos (OWASP / MEC)
 app.UseMiddleware<SecurityHeadersMiddleware>();
 
+// Proteção Criptográfica de Amarração de Dispositivo / IP (Device Fingerprint)
+app.UseMiddleware<DeviceFingerprintMiddleware>();
+
 // Compressão Dinâmica de Resposta HTTP (Brotli/Gzip)
 app.UseResponseCompression();
 
@@ -376,22 +379,80 @@ app.MapGet("/readyz", async (SolarDbContext db) =>
 app.MapPost("/api/v1/auth/login", async (
     LoginRequest request,
     AuthenticateUserUseCase authUseCase,
+    IJwtTokenService jwtTokenService,
     HttpContext httpContext) =>
 {
-    var clientIp = httpContext.Connection.RemoteIpAddress?.ToString();
+    var clientIp = httpContext.Connection.RemoteIpAddress?.ToString() ?? "127.0.0.1";
+    var userAgent = httpContext.Request.Headers.UserAgent.ToString();
     var enrichedRequest = request with { RemoteIp = clientIp };
     var result = await authUseCase.ExecuteAsync(enrichedRequest);
 
-    if (!result.Success)
+    if (!result.Success || result.User == null)
     {
         return Results.Unauthorized();
     }
 
-    return Results.Ok(result);
+    // Gera token JWT criptográfico amarrado com Device Fingerprint
+    var userSummary = new UserSummaryDto(
+        Id: result.User.Id,
+        Username: result.User.Username,
+        Name: result.User.Name,
+        Email: result.User.Email,
+        Cpf: result.User.Cpf,
+        Role: result.User.ProfileTypes == 16 ? "admin" : result.User.ProfileTypes == 4 ? "teacher" : "student"
+    );
+    var tokenResponse = jwtTokenService.GenerateToken(userSummary, expirationSeconds: 86400, clientIp: clientIp, userAgent: userAgent);
+    var token = tokenResponse.AccessToken;
+
+    // Emite Cookie blindado HttpOnly + Secure + SameSite=Strict
+    httpContext.Response.Cookies.Append("solar_access_token", token, new CookieOptions
+    {
+        HttpOnly = true,
+        Secure = !app.Environment.IsDevelopment(),
+        SameSite = SameSiteMode.Strict,
+        Expires = DateTimeOffset.UtcNow.AddHours(24),
+        Path = "/"
+    });
+
+    var responseWithJwt = result with { Token = token };
+    return Results.Ok(responseWithJwt);
 })
 .RequireRateLimiting("AuthLimiter")
 .WithName("Login")
-.WithSummary("Autentica o usuário com suporte a migração de hashes legados e login por Username ou CPF");
+.WithSummary("Autentica o usuário com suporte a migração de hashes legados, cookies blindados HttpOnly e Device Fingerprint");
+
+// Encerramento de Sessão e Revogação de Credencial (Logout Seguro)
+app.MapPost("/api/v1/auth/logout", (
+    HttpContext httpContext,
+    IJwtTokenService jwtTokenService) =>
+{
+    httpContext.Response.Cookies.Delete("solar_access_token", new CookieOptions
+    {
+        Path = "/",
+        HttpOnly = true,
+        SameSite = SameSiteMode.Strict
+    });
+
+    string? token = null;
+    var authHeader = httpContext.Request.Headers.Authorization.ToString();
+    if (!string.IsNullOrEmpty(authHeader) && authHeader.StartsWith("Bearer ", StringComparison.OrdinalIgnoreCase))
+    {
+        token = authHeader["Bearer ".Length..].Trim();
+    }
+    else if (httpContext.Request.Cookies.TryGetValue("solar_access_token", out var cookieToken))
+    {
+        token = cookieToken;
+    }
+
+    if (!string.IsNullOrEmpty(token))
+    {
+        jwtTokenService.RevokeToken(token);
+    }
+
+    return Results.Ok(new { Success = true, Message = "Sessão encerrada com sucesso e credencial revogada." });
+})
+.WithName("Logout")
+.WithSummary("Encerra a sessão, remove cookies blindados e revoga o token no servidor");
 
 // Verificação de CPF para Autocadastro (espelha verify_cpf_users_path)
 app.MapPost("/api/v1/auth/verify-cpf", async (
