@@ -10,7 +10,7 @@ public class BlacklistService
     {
         if (string.IsNullOrWhiteSpace(cpf)) return false;
         var cleanCpf = Regex.Replace(cpf, @"[^\d]", "");
-        return await db.UserBlacklists.AnyAsync(b => b.Active && (b.Cpf == cleanCpf || b.Cpf == cpf));
+        return await db.UserBlacklists.AnyAsync(b => b.Cpf == cleanCpf || b.Cpf == cpf);
     }
 
     public async Task<UserBlacklist> AddToBlacklistAsync(string cpf, string reason, long? userId, IBlacklistDbContext db)
@@ -20,7 +20,6 @@ public class BlacklistService
 
         if (existing != null)
         {
-            existing.Active = true;
             existing.Reason = reason;
             existing.UpdatedAt = DateTime.UtcNow;
             await db.SaveChangesAsync();
@@ -49,12 +48,7 @@ public class BlacklistService
 
         if (!entries.Any()) return false;
 
-        foreach (var entry in entries)
-        {
-            entry.Active = false;
-            entry.UpdatedAt = DateTime.UtcNow;
-        }
-
+        db.UserBlacklists.RemoveRange(entries);
         await db.SaveChangesAsync();
         return true;
     }
