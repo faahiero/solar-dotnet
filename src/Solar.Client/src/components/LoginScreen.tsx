@@ -80,10 +80,12 @@ export const LoginScreen = ({ onLoginSuccess }: LoginScreenProps) => {
         body: JSON.stringify({ cpf: registerCpf.trim() })
       });
       const data: VerifyCpfResponse = await response.json();
-      if (data.existsInLocal) {
+      
+      if (data.existsInLocal || data.existsInSigaa) {
+        // Exibe o card específico (Usuário já cadastrado OU Vínculo SIGAA localizado)
         setCpfResult(data);
       } else {
-        // Redirecionamento direto para o formulário em 4 etapas
+        // CPF não encontrado nem no Solar nem no SIGAA -> abre o formulário completo de autocadastro
         setShowWizard(true);
       }
     } catch (err: any) {
@@ -178,6 +180,9 @@ export const LoginScreen = ({ onLoginSuccess }: LoginScreenProps) => {
           /* WIZARD COMPLETO DE AUTOCADASTRO (4 ETAPAS) */
           <RegistrationWizard
             initialCpf={registerCpf}
+            initialName={cpfResult?.existsInSigaa ? cpfResult.name : undefined}
+            initialEmail={cpfResult?.existsInSigaa ? cpfResult.email : undefined}
+            isSigaaImport={cpfResult?.existsInSigaa ?? false}
             onCancel={() => setShowWizard(false)}
             onRegistrationSuccess={onLoginSuccess}
           />
@@ -322,14 +327,26 @@ export const LoginScreen = ({ onLoginSuccess }: LoginScreenProps) => {
                           </button>
                         </div>
                       ) : cpfResult.existsInSigaa ? (
-                        /* LOCALIZADO NO SIGAA -> IMPORTAÇÃO RÁPIDA */
-                        <div style={{ background: '#dcfce7', color: '#166534', padding: '14px', borderRadius: '6px', border: '1px solid #86efac' }}>
-                          <p style={{ margin: '0 0 6px 0', fontWeight: 700 }}>
-                            ✔ Vínculo Localizado no SIGAA: {cpfResult.name}
+                        /* LOCALIZADO NO SIGAA -> OPÇÃO DE IMPORTAÇÃO DIRETA OU WIZARD PRÉ-PREENCHIDO */
+                        <div style={{ background: '#dcfce7', color: '#166534', padding: '16px', borderRadius: '8px', border: '1px solid #86efac', boxShadow: '0 2px 6px rgba(22,101,52,0.08)' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
+                            <span style={{ fontSize: '1.3rem' }}>🎓</span>
+                            <strong style={{ fontSize: '0.95rem' }}>Vínculo Localizado no SIGAA / UFC</strong>
+                          </div>
+                          
+                          <p style={{ margin: '0 0 6px 0', fontWeight: 600, color: '#14532d' }}>
+                            Nome: {cpfResult.name}
                           </p>
-                          <p style={{ margin: '0 0 10px 0', fontSize: '0.8rem', color: '#15803d' }}>
-                            Defina uma senha para importar seus dados acadêmicos e liberar seu acesso:
+                          {cpfResult.email && (
+                            <p style={{ margin: '0 0 10px 0', fontSize: '0.82rem', color: '#15803d' }}>
+                              E-mail institucional: {cpfResult.email}
+                            </p>
+                          )}
+
+                          <p style={{ margin: '0 0 12px 0', fontSize: '0.82rem', lineHeight: 1.4 }}>
+                            Escolha uma senha para sincronizar automaticamente seus dados acadêmicos e entrar imediatamente:
                           </p>
+
                           <form onSubmit={handleImportSigaa}>
                             <input
                               type="password"
@@ -352,12 +369,22 @@ export const LoginScreen = ({ onLoginSuccess }: LoginScreenProps) => {
                             <button
                               type="submit"
                               className="solar-btn-acessar"
-                              style={{ background: '#16a34a', color: '#fff', border: 'none' }}
+                              style={{ background: '#16a34a', color: '#fff', border: 'none', fontWeight: 600 }}
                               disabled={loading}
                             >
-                              {loading ? 'Sincronizando...' : '✔ Importar e Entrar no Solar'}
+                              {loading ? 'Sincronizando...' : '✔ Importar Dados do SIGAA e Entrar'}
                             </button>
                           </form>
+
+                          <div style={{ textAlign: 'center', marginTop: '12px', borderTop: '1px solid #bbf7d0', paddingTop: '10px' }}>
+                            <button
+                              type="button"
+                              style={{ background: 'none', border: 'none', color: '#15803d', cursor: 'pointer', fontSize: '0.8rem', textDecoration: 'underline' }}
+                              onClick={() => setShowWizard(true)}
+                            >
+                              Ou clique aqui para revisar e preencher o formulário completo em 4 etapas
+                            </button>
+                          </div>
                         </div>
                       ) : (
                         /* NÃO LOCALIZADO NO SIGAA -> AUTOCADASTRO COMPLETO */
