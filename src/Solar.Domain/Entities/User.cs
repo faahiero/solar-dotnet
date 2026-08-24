@@ -26,6 +26,15 @@ public class User
     public string? CurrentSignInIp { get; set; }
     public string? LastSignInIp { get; set; }
 
+    // Devise Lockable & Brute Force Protection
+    public int FailedAttempts { get; set; }
+    public DateTime? LockedAt { get; set; }
+
+    // LGPD & Compliance
+    public DateTime? TermsAcceptedAt { get; set; }
+    public string? TermsAcceptedIp { get; set; }
+    public string? TermsVersion { get; set; }
+
     public string? Cpf { get; set; }
     public bool? Gender { get; set; }
     public string? Telephone { get; set; }

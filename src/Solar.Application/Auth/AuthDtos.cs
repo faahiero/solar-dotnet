@@ -70,8 +70,10 @@ public record RegisterUserRequest
     public string? Telephone { get; init; }
     public string? CellPhone { get; init; }
 
-    // Step 4: Outras Informações
+    // Step 4: Outras Informações & LGPD
     public string? Institution { get; init; }
+    public bool AcceptTerms { get; init; } = true;
+    public string? TermsVersion { get; init; } = "v2.0_2026";
     public string? RemoteIp { get; init; }
 }
 
@@ -88,5 +90,7 @@ public record ImportSigaaUserRequest
     public string Cpf { get; init; } = string.Empty;
     public string Password { get; init; } = string.Empty;
     public string PasswordConfirmation { get; init; } = string.Empty;
+    public bool AcceptTerms { get; init; } = true;
+    public string? TermsVersion { get; init; } = "v2.0_2026";
     public string? RemoteIp { get; init; }
 }
