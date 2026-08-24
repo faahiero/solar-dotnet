@@ -305,7 +305,10 @@ export const LoginScreen = ({ onLoginSuccess }: LoginScreenProps) => {
                 /* ABA CADASTRAR: VERIFICAÇÃO DE CPF E OPÇÕES DE CADASTRO */
                 <div>
                   <form onSubmit={handleVerifyCpf}>
-                    <div className="login-field-box">
+                    <div className="login-field-box" style={{ textAlign: 'left', marginBottom: '14px' }}>
+                      <label className="solar-pwd-label">
+                        CPF (somente números ou formatado):
+                      </label>
                       <input
                         type="text"
                         value={registerCpf}
