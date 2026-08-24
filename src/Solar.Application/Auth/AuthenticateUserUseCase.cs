@@ -42,15 +42,23 @@ public class AuthenticateUserUseCase
             };
         }
 
-        string rawLogin = request.Login.Trim().ToLowerInvariant();
-        string sanitizedCpf = rawLogin.Replace(".", "").Replace("-", "");
+        string login = request.Login.Trim();
+        string cleanDigits = string.Concat(login.Where(char.IsDigit));
+        bool isCpf = cleanDigits.Length == 11 && login.All(c => char.IsDigit(c) || c is '.' or '-');
 
-        // 1. Busca por Username ou CPF (espelha Devise::LoginController:38)
-        var user = await _dbContext.Users
-            .FirstOrDefaultAsync(u =>
-                u.Username.ToLower() == rawLogin ||
-                (u.Cpf != null && (u.Cpf == rawLogin || u.Cpf == sanitizedCpf)),
-                cancellationToken);
+        // 1. Busca otimizada e direcionada por CPF ou Username (com índices dedicados)
+        User? user;
+        if (isCpf)
+        {
+            user = await _dbContext.Users
+                .FirstOrDefaultAsync(u => u.Cpf == cleanDigits || u.Cpf == login, cancellationToken);
+        }
+        else
+        {
+            string lowerUsername = login.ToLowerInvariant();
+            user = await _dbContext.Users
+                .FirstOrDefaultAsync(u => u.Username.ToLower() == lowerUsername, cancellationToken);
+        }
 
         if (user == null)
         {

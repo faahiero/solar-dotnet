@@ -129,7 +129,7 @@ builder.Services.AddSingleton(new BigBlueButtonServerConfig
     SharedSecret = builder.Configuration["BigBlueButton:SharedSecret"] ?? "solar_secret"
 });
 builder.Services.AddSingleton<BigBlueButtonClient>();
-builder.Services.AddSingleton<ISigaaAcademicService, SigaaAcademicClient>();
+builder.Services.AddHttpClient<ISigaaAcademicService, SigaaAcademicClient>();
 builder.Services.AddSingleton<IAcademicReportService, AcademicPdfReportService>();
 
 // Filas e Processamento Assíncrono em Segundo Plano (Substitui DelayedJob / Rufus)

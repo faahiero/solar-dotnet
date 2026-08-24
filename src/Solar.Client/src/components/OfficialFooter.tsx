@@ -10,6 +10,7 @@ export const OfficialFooter = ({ variant = 'login' }: OfficialFooterProps) => {
   const { language, setLanguage, t } = useTranslation();
   const [activeMenu, setActiveMenu] = useState<'portais' | 'desenvolvimento' | 'ajuda' | 'idioma' | null>(null);
   const [showPrivacyModal, setShowPrivacyModal] = useState(false);
+  const [privacySearch, setPrivacySearch] = useState('');
   const footerRef = useRef<HTMLElement>(null);
 
   // Fecha menus ao clicar fora
@@ -230,32 +231,148 @@ export const OfficialFooter = ({ variant = 'login' }: OfficialFooterProps) => {
                 ✕
               </button>
             </div>
+
+            {/* Campo de Busca em Tempo Real (Espelha #search_policy do Ruby) */}
+            <div style={{ padding: '12px 24px', background: '#f1f5f9', borderBottom: '1px solid #e2e8f0', display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <div style={{ position: 'relative', width: '100%' }}>
+                <input
+                  type="text"
+                  value={privacySearch}
+                  onChange={(e) => setPrivacySearch(e.target.value)}
+                  placeholder={t('privacy_search_placeholder')}
+                  style={{
+                    width: '100%',
+                    padding: '8px 32px 8px 12px',
+                    borderRadius: '6px',
+                    border: '1px solid #cbd5e1',
+                    fontSize: '0.85rem',
+                    boxSizing: 'border-box'
+                  }}
+                  autoFocus
+                />
+                {privacySearch && (
+                  <button
+                    type="button"
+                    onClick={() => setPrivacySearch('')}
+                    style={{
+                      position: 'absolute',
+                      right: '8px',
+                      top: '50%',
+                      transform: 'translateY(-50%)',
+                      background: 'none',
+                      border: 'none',
+                      color: '#64748b',
+                      cursor: 'pointer',
+                      fontSize: '0.85rem'
+                    }}
+                  >
+                    ✕
+                  </button>
+                )}
+              </div>
+            </div>
             
-            <div className="privacy-modal-body">
-              <section className="privacy-section">
-                <h4>{t('privacy_sec1_title')}</h4>
-                <p>{t('privacy_sec1_body')}</p>
-              </section>
+            <div className="privacy-modal-body" style={{ maxHeight: '60vh', overflowY: 'auto' }}>
+              {/* Seção 1 */}
+              {(privacySearch === '' || [t('privacy_sec1_title'), t('privacy_sec1_p1'), t('privacy_sec1_p2')].some(s => s.toLowerCase().includes(privacySearch.toLowerCase()))) && (
+                <section className="privacy-section">
+                  <h4>{t('privacy_sec1_title')}</h4>
+                  <p>{t('privacy_sec1_p1')}</p>
+                  <p>{t('privacy_sec1_p2')}</p>
+                  <p style={{ fontWeight: 600 }}>{t('privacy_sec1_p3')}</p>
+                </section>
+              )}
 
-              <section className="privacy-section">
-                <h4>{t('privacy_sec2_title')}</h4>
-                <p>{t('privacy_sec2_item1')}</p>
-                <ul>
-                  <li>{t('privacy_sec2_item2')}</li>
-                  <li>{t('privacy_sec2_item3')}</li>
-                  <li>{t('privacy_sec2_item4')}</li>
-                </ul>
-              </section>
+              {/* Seção 2 */}
+              {(privacySearch === '' || [t('privacy_sec2_title'), t('privacy_sec2_intro'), t('privacy_sec2_item1'), t('privacy_sec2_item2'), t('privacy_sec2_item3'), t('privacy_sec2_item4')].some(s => s.toLowerCase().includes(privacySearch.toLowerCase()))) && (
+                <section className="privacy-section">
+                  <h4>{t('privacy_sec2_title')}</h4>
+                  <p>{t('privacy_sec2_intro')}</p>
+                  <ul style={{ paddingLeft: '20px', lineHeight: 1.6 }}>
+                    <li style={{ marginBottom: '8px' }}>{t('privacy_sec2_item1')}</li>
+                    <li style={{ marginBottom: '8px' }}>{t('privacy_sec2_item2')}</li>
+                    <li style={{ marginBottom: '8px' }}>{t('privacy_sec2_item3')}</li>
+                    <li style={{ marginBottom: '8px' }}>{t('privacy_sec2_item4')}</li>
+                  </ul>
+                </section>
+              )}
 
-              <section className="privacy-section">
-                <h4>{t('privacy_sec3_title')}</h4>
-                <p>{t('privacy_sec3_body')}</p>
-              </section>
+              {/* Seção 3 */}
+              {(privacySearch === '' || [t('privacy_sec3_title'), t('privacy_sec3_p1'), t('privacy_sec3_p2'), t('privacy_sec3_p3')].some(s => s.toLowerCase().includes(privacySearch.toLowerCase()))) && (
+                <section className="privacy-section">
+                  <h4>{t('privacy_sec3_title')}</h4>
+                  <p>{t('privacy_sec3_p1')}</p>
+                  <p>{t('privacy_sec3_p2')}</p>
+                  <p>{t('privacy_sec3_p3')}</p>
+                </section>
+              )}
 
-              <section className="privacy-section">
-                <h4>{t('privacy_sec4_title')}</h4>
-                <p>{t('privacy_sec4_body')}</p>
-              </section>
+              {/* Seção 4 */}
+              {(privacySearch === '' || [t('privacy_sec4_title'), t('privacy_sec4_p1'), t('privacy_sec4_p2'), t('privacy_sec4_p3'), t('privacy_sec4_p4'), t('privacy_sec4_p5'), t('privacy_sec4_p6'), t('privacy_sec4_p7')].some(s => s.toLowerCase().includes(privacySearch.toLowerCase()))) && (
+                <section className="privacy-section">
+                  <h4>{t('privacy_sec4_title')}</h4>
+                  <p>{t('privacy_sec4_p1')}</p>
+                  <p>{t('privacy_sec4_p2')}</p>
+                  <p>{t('privacy_sec4_p3')}</p>
+                  <p>{t('privacy_sec4_p4')}</p>
+                  <p>{t('privacy_sec4_p5')}</p>
+                  <p>{t('privacy_sec4_p6')}</p>
+                  <p>{t('privacy_sec4_p7')}</p>
+                </section>
+              )}
+
+              {/* Seção 5 */}
+              {(privacySearch === '' || [t('privacy_sec5_title'), t('privacy_sec5_body')].some(s => s.toLowerCase().includes(privacySearch.toLowerCase()))) && (
+                <section className="privacy-section">
+                  <h4>{t('privacy_sec5_title')}</h4>
+                  <p>{t('privacy_sec5_body')}</p>
+                </section>
+              )}
+
+              {/* Seção 6 */}
+              {(privacySearch === '' || [t('privacy_sec6_title'), t('privacy_sec6_p1'), t('privacy_sec6_p2'), t('privacy_sec6_p3')].some(s => s.toLowerCase().includes(privacySearch.toLowerCase()))) && (
+                <section className="privacy-section">
+                  <h4>{t('privacy_sec6_title')}</h4>
+                  <p>{t('privacy_sec6_p1')}</p>
+                  <p>{t('privacy_sec6_p2')}</p>
+                  <p>{t('privacy_sec6_p3')}</p>
+                </section>
+              )}
+
+              {/* Seção 7 */}
+              {(privacySearch === '' || [t('privacy_sec7_title'), t('privacy_sec7_p1'), t('privacy_sec7_p2'), t('privacy_sec7_p3'), t('privacy_sec7_p4')].some(s => s.toLowerCase().includes(privacySearch.toLowerCase()))) && (
+                <section className="privacy-section">
+                  <h4>{t('privacy_sec7_title')}</h4>
+                  <p>{t('privacy_sec7_p1')}</p>
+                  <p>{t('privacy_sec7_p2')}</p>
+                  <p>{t('privacy_sec7_p3')}</p>
+                  <p>{t('privacy_sec7_p4')}</p>
+                </section>
+              )}
+
+              {/* Seção 8 */}
+              {(privacySearch === '' || [t('privacy_sec8_title'), t('privacy_sec8_item1'), t('privacy_sec8_item2'), t('privacy_sec8_item3'), t('privacy_sec8_item4'), t('privacy_sec8_item5'), t('privacy_sec8_item6'), t('privacy_sec8_item7')].some(s => s.toLowerCase().includes(privacySearch.toLowerCase()))) && (
+                <section className="privacy-section" style={{ background: '#f8fafc', padding: '14px', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
+                  <h4 style={{ color: '#0369a1' }}>{t('privacy_sec8_title')}</h4>
+                  <ul style={{ paddingLeft: '18px', fontSize: '0.82rem', margin: '6px 0 0 0' }}>
+                    <li>{t('privacy_sec8_item1')}</li>
+                    <li>{t('privacy_sec8_item2')}</li>
+                    <li>{t('privacy_sec8_item3')}</li>
+                    <li>{t('privacy_sec8_item4')}</li>
+                    <li>{t('privacy_sec8_item5')}</li>
+                    <li>{t('privacy_sec8_item6')}</li>
+                    <li>{t('privacy_sec8_item7')}</li>
+                  </ul>
+                </section>
+              )}
+
+              {/* Seção 9 */}
+              {(privacySearch === '' || [t('privacy_sec9_title'), t('privacy_sec9_body')].some(s => s.toLowerCase().includes(privacySearch.toLowerCase()))) && (
+                <section className="privacy-section" style={{ marginTop: '14px', background: '#ecfdf5', padding: '12px 14px', borderRadius: '8px', border: '1px solid #a7f3d0' }}>
+                  <h4 style={{ color: '#047857', margin: '0 0 4px 0' }}>{t('privacy_sec9_title')}</h4>
+                  <p style={{ margin: 0, fontSize: '0.84rem', color: '#065f46' }}>{t('privacy_sec9_body')}</p>
+                </section>
+              )}
             </div>
 
             <div className="privacy-modal-footer">
