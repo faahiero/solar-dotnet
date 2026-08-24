@@ -117,6 +117,7 @@ builder.Services.AddScoped<PasswordHasher<User>>();
 builder.Services.AddScoped<RegisterUserUseCase>();
 builder.Services.AddScoped<IPasswordHasher<User>, DeviseLegacyPasswordHasher<User>>();
 builder.Services.AddSingleton<IJwtTokenService, JwtTokenService>();
+builder.Services.AddScoped<ISolarAuthorizationService, SolarAuthorizationService>();
 
 // Integrações Externas (BigBlueButton e SIGAA)
 builder.Services.AddSingleton(new BigBlueButtonServerConfig
