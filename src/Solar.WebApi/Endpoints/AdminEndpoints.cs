@@ -152,7 +152,6 @@ public static class AdminEndpoints
         app.MapGet("/api/v1/admin/blacklist", async (SolarDbContext db) =>
         {
             var list = await db.UserBlacklists
-                .Where(b => b.Active)
                 .OrderByDescending(b => b.CreatedAt)
                 .Select(b => new
                 {
@@ -286,6 +285,37 @@ public static class AdminEndpoints
         })
         .WithName("AdminClearLogs")
         .WithSummary("Limpa o buffer de logs em memória");
+
+        // Métricas e Telemetria Operacional
+        app.MapGet("/api/v1/admin/metrics", async (SolarDbContext db) =>
+        {
+            var totalUsers = await db.Users.CountAsync();
+            var activeUsers = await db.Users.CountAsync(u => u.Active);
+            var totalAllocations = await db.Allocations.CountAsync();
+            var activeAllocations = await db.Allocations.CountAsync(a => a.Status == AllocationStatus.Activated);
+            var totalOffers = await db.Offers.CountAsync();
+            var totalGroups = await db.Groups.CountAsync();
+            var totalCourses = await db.Courses.CountAsync();
+            var totalBlacklisted = await db.UserBlacklists.CountAsync();
+
+            return Results.Ok(new
+            {
+                Timestamp = DateTime.UtcNow,
+                Users = new { Total = totalUsers, Active = activeUsers },
+                Allocations = new { Total = totalAllocations, Active = activeAllocations },
+                Academic = new { Offers = totalOffers, Groups = totalGroups, Courses = totalCourses },
+                Security = new { BlacklistedCpfs = totalBlacklisted },
+                System = new
+                {
+                    Framework = ".NET 10.0 AOT-Ready",
+                    Environment = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") ?? "Production",
+                    ProcessorCount = Environment.ProcessorCount,
+                    WorkingSetMB = Math.Round((double)Environment.WorkingSet / (1024 * 1024), 2)
+                }
+            });
+        })
+        .WithName("AdminGetMetrics")
+        .WithSummary("Retorna métricas de saúde, contadores do sistema e telemetria operacional");
 
         // ----------------------------------------------------
         // CRUD de Turmas / Grupos (Groups - Espelha groups_controller)
