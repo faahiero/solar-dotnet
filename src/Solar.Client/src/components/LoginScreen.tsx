@@ -62,6 +62,16 @@ export const LoginScreen = ({ onLoginSuccess }: LoginScreenProps) => {
     }
   };
 
+  // Opção B: Formatação suave no onBlur se o valor digitado for estritamente um CPF de 11 dígitos
+  const handleLoginBlur = () => {
+    const raw = login.trim();
+    const digitsOnly = raw.replace(/\D/g, '');
+    if (digitsOnly.length === 11 && (raw.length === 11 || raw.length === 14)) {
+      const formatted = `${digitsOnly.slice(0, 3)}.${digitsOnly.slice(3, 6)}.${digitsOnly.slice(6, 9)}-${digitsOnly.slice(9)}`;
+      setLogin(formatted);
+    }
+  };
+
   // Formatação automática de CPF (000.000.000-00) idêntica à de esqueci senha
   const handleRegisterCpfChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const raw = e.target.value;
@@ -250,6 +260,7 @@ export const LoginScreen = ({ onLoginSuccess }: LoginScreenProps) => {
                       type="text"
                       value={login}
                       onChange={(e) => setLogin(e.target.value)}
+                      onBlur={handleLoginBlur}
                       placeholder={t('user_placeholder')}
                       className="solar-input-field"
                       autoFocus
