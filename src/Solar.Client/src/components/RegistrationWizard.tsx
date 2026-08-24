@@ -3,12 +3,18 @@ import type { UserProfile } from '../types/auth';
 
 interface RegistrationWizardProps {
   initialCpf: string;
+  initialName?: string;
+  initialEmail?: string;
+  isSigaaImport?: boolean;
   onCancel: () => void;
   onRegistrationSuccess: (user: UserProfile, token: string) => void;
 }
 
 export const RegistrationWizard: React.FC<RegistrationWizardProps> = ({
   initialCpf,
+  initialName,
+  initialEmail,
+  isSigaaImport,
   onCancel,
   onRegistrationSuccess
 }) => {
@@ -25,18 +31,18 @@ export const RegistrationWizard: React.FC<RegistrationWizardProps> = ({
 
   // Form State
   const [formData, setFormData] = useState({
-    name: '',
+    name: initialName || '',
     cpf: initialCpf,
     birthdate: '',
     gender: 'true',
     hasSpecialNeeds: false,
     specialNeeds: '',
     nick: '',
-    username: '',
+    username: (initialEmail && initialEmail.includes('@')) ? initialEmail.split('@')[0].toLowerCase() : '',
     password: '',
     passwordConfirmation: '',
-    email: '',
-    emailConfirmation: '',
+    email: initialEmail || '',
+    emailConfirmation: initialEmail || '',
     alternateEmail: '',
     address: '',
     addressNumber: '',
@@ -264,6 +270,15 @@ export const RegistrationWizard: React.FC<RegistrationWizardProps> = ({
           {/* ETAPA 1: DADOS PESSOAIS */}
           {currentStep === 1 && (
             <div className="solar-step-panel">
+              {isSigaaImport && (
+                <div style={{ background: '#dcfce7', border: '1px solid #86efac', borderRadius: '6px', padding: '10px 14px', marginBottom: '16px', fontSize: '0.84rem', color: '#166534', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <span style={{ fontSize: '1.2rem' }}>🎓</span>
+                  <div>
+                    <strong>Cadastro Localizado no SIGAA / UFC</strong>
+                    <div>Seus dados acadêmicos foram sincronizados com sucesso. Complete os campos restantes para ativar seu acesso no Solar LMS.</div>
+                  </div>
+                </div>
+              )}
               <div className="solar-form-row">
                 <label className="solar-form-label">
                   <span className="required-star">*</span> Nome
