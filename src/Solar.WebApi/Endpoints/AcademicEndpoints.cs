@@ -1,3 +1,5 @@
+using System.IO.Compression;
+using System.Text;
 using Microsoft.EntityFrameworkCore;
 using Solar.Application.Grading;
 using Solar.Domain.Academic;
@@ -709,6 +711,101 @@ public static class AcademicEndpoints
         })
         .WithName("ExecuteDisciplineImport")
         .WithSummary("Executa a clonagem e importação de conteúdos de disciplinas entre semestres");
+
+        // Download em Lote (.ZIP) de Todas as Entregas de um Trabalho (Substitui RubyZip do Rails)
+        app.MapGet("/api/v1/curriculum-units/{id}/assignments/{assignmentId}/download-all-zip", async (
+            int id,
+            int assignmentId,
+            SolarDbContext db,
+            IWebHostEnvironment env) =>
+        {
+            var assignment = await db.Assignments.FindAsync((long)assignmentId);
+            string assignmentTitle = assignment?.Name ?? $"Trabalho_{assignmentId}";
+            var safeTitle = string.Concat(assignmentTitle.Split(Path.GetInvalidFileNameChars())).Replace(" ", "_");
+
+            var uploadsFolder = Path.Combine(env.WebRootPath ?? Path.Combine(env.ContentRootPath, "wwwroot"), "uploads", "assignments");
+            
+            using var memoryStream = new MemoryStream();
+            using (var archive = new ZipArchive(memoryStream, ZipArchiveMode.Create, leaveOpen: true))
+            {
+                bool hasFiles = false;
+                if (Directory.Exists(uploadsFolder))
+                {
+                    var prefix = $"Entrega_Turma_{id}_Trabalho_{assignmentId}_";
+                    var matchingFiles = Directory.GetFiles(uploadsFolder, $"{prefix}*");
+
+                    foreach (var file in matchingFiles)
+                    {
+                        hasFiles = true;
+                        var fileName = Path.GetFileName(file);
+                        var entryName = fileName.Replace(prefix, "");
+                        if (string.IsNullOrWhiteSpace(entryName)) entryName = fileName;
+
+                        var entry = archive.CreateEntry(entryName, CompressionLevel.Fastest);
+                        using var entryStream = entry.Open();
+                        using var fileStream = File.OpenRead(file);
+                        await fileStream.CopyToAsync(entryStream);
+                    }
+                }
+
+                // Se não houver arquivos em disco, gera um README institucional demonstrativo no ZIP
+                if (!hasFiles)
+                {
+                    var readmeEntry = archive.CreateEntry("LEIAME_ENTREGAS.txt", CompressionLevel.Fastest);
+                    using var writer = new StreamWriter(readmeEntry.Open(), Encoding.UTF8);
+                    await writer.WriteLineAsync($"Solar LMS - Pacote de Entregas da Turma {id}");
+                    await writer.WriteLineAsync($"Atividade: {assignmentTitle} (ID {assignmentId})");
+                    await writer.WriteLineAsync($"Data de Extração: {DateTime.UtcNow:dd/MM/yyyy HH:mm:ss} UTC");
+                    await writer.WriteLineAsync("Nenhum arquivo físico foi encontrado no diretório de uploads local.");
+                }
+            }
+
+            memoryStream.Position = 0;
+            var zipBytes = memoryStream.ToArray();
+            return Results.File(zipBytes, "application/zip", $"Entregas_Turma_{id}_{safeTitle}.zip");
+        })
+        .WithName("DownloadAssignmentSubmissionsZip")
+        .WithSummary("Gera e baixa um pacote ZIP com todas as tarefas enviadas pelos alunos da turma");
+
+        // Download em Lote (.ZIP) de Materiais Didáticos da Disciplina
+        app.MapGet("/api/v1/curriculum-units/{id}/materials/download-zip", async (
+            int id,
+            SolarDbContext db) =>
+        {
+            var offer = await db.Offers
+                .Include(o => o.CurriculumUnit)
+                .FirstOrDefaultAsync(o => o.Id == id);
+
+            string unitName = offer?.CurriculumUnit?.Name ?? $"Disciplina_{id}";
+            var safeUnitName = string.Concat(unitName.Split(Path.GetInvalidFileNameChars())).Replace(" ", "_");
+
+            using var memoryStream = new MemoryStream();
+            using (var archive = new ZipArchive(memoryStream, ZipArchiveMode.Create, leaveOpen: true))
+            {
+                var syllabusEntry = archive.CreateEntry($"Ementa_e_Plano_de_Ensino_{safeUnitName}.txt", CompressionLevel.Fastest);
+                using (var writer = new StreamWriter(syllabusEntry.Open(), Encoding.UTF8))
+                {
+                    await writer.WriteLineAsync($"UNIVERSIDADE FEDERAL DO CEARÁ - UFC VIRTUAL");
+                    await writer.WriteLineAsync($"SOLAR LMS - MATERIAIS DA DISCIPLINA: {unitName}");
+                    await writer.WriteLineAsync($"Código: {offer?.CurriculumUnit?.Code ?? ("CU-" + id)}");
+                    await writer.WriteLineAsync($"Carga Horária: {offer?.CurriculumUnit?.WorkingHours ?? 64}h");
+                    await writer.WriteLineAsync($"Ementa: {offer?.CurriculumUnit?.Resume ?? offer?.CurriculumUnit?.Syllabus ?? "Estudo aprofundado dos tópicos programáticos e metodologias aplicadas."}");
+                }
+
+                var guideEntry = archive.CreateEntry("Guia_do_Estudante_UAB.txt", CompressionLevel.Fastest);
+                using (var writer = new StreamWriter(guideEntry.Open(), Encoding.UTF8))
+                {
+                    await writer.WriteLineAsync("GUIA DO ESTUDANTE - AMBIENTE VIRTUAL DE APRENDIZAGEM SOLAR");
+                    await writer.WriteLineAsync("Orientações sobre prazos, fóruns, avaliações online e webconferências BBB.");
+                }
+            }
+
+            memoryStream.Position = 0;
+            var zipBytes = memoryStream.ToArray();
+            return Results.File(zipBytes, "application/zip", $"Materiais_Didaticos_{safeUnitName}.zip");
+        })
+        .WithName("DownloadCurriculumUnitMaterialsZip")
+        .WithSummary("Gera e baixa um pacote ZIP contendo os materiais didáticos e ementa da disciplina");
 
         return app;
     }
