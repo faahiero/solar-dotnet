@@ -22,15 +22,75 @@ public record PasswordResetResult(
 
 public interface IEmailNotificationService
 {
-    Task SendPasswordResetEmailAsync(string recipientEmail, string recipientName, string resetToken);
+    Task SendPasswordResetEmailAsync(string recipientEmail, string recipientName, string resetToken, string? htmlBody = null);
 }
 
 public class ConsoleEmailNotificationService : IEmailNotificationService
 {
-    public Task SendPasswordResetEmailAsync(string recipientEmail, string recipientName, string resetToken)
+    public Task SendPasswordResetEmailAsync(string recipientEmail, string recipientName, string resetToken, string? htmlBody = null)
     {
-        Console.WriteLine($"[EMAIL SERVICE] Enviado e-mail de recuperação de senha para: {recipientEmail} ({recipientName}) - Token: {resetToken}");
+        Console.WriteLine($"[EMAIL UFC VIRTUAL] Enviando e-mail institucional para {recipientEmail} ({recipientName}) - Token: {resetToken}");
         return Task.CompletedTask;
+    }
+}
+
+public class UfcHtmlEmailTemplateBuilder
+{
+    public static string BuildPasswordResetHtml(string recipientName, string resetToken, string resetUrl)
+    {
+        return $$"""
+        <!DOCTYPE html>
+        <html lang="pt-BR">
+        <head>
+          <meta charset="utf-8">
+          <meta name="viewport" content="width=device-width, initial-scale=1.0">
+          <title>Recuperação de Senha - Solar LMS UFC</title>
+          <style>
+            body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #f4f6f9; margin: 0; padding: 20px; color: #333333; }
+            .container { max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 12px rgba(0,0,0,0.08); }
+            .header { background-color: #004b8d; padding: 28px; text-align: center; color: #ffffff; }
+            .header h1 { margin: 0; font-size: 22px; font-weight: 700; letter-spacing: 0.5px; }
+            .header p { margin: 4px 0 0 0; font-size: 13px; color: #c9e2ff; }
+            .content { padding: 32px 28px; line-height: 1.6; }
+            .greeting { font-size: 16px; font-weight: 600; color: #1e293b; margin-bottom: 12px; }
+            .btn-container { text-align: center; margin: 30px 0; }
+            .btn { display: inline-block; background-color: #0066cc; color: #ffffff !important; text-decoration: none; padding: 14px 32px; font-size: 15px; font-weight: 600; border-radius: 8px; box-shadow: 0 2px 6px rgba(0,102,204,0.3); }
+            .token-box { background-color: #f8fafc; border: 1px dashed #cbd5e1; border-radius: 8px; padding: 14px; text-align: center; margin: 20px 0; }
+            .token-code { font-family: monospace; font-size: 18px; font-weight: 700; color: #004b8d; letter-spacing: 2px; }
+            .notice { font-size: 13px; color: #64748b; margin-top: 24px; border-top: 1px solid #e2e8f0; padding-top: 16px; }
+            .footer { background-color: #f8fafc; padding: 20px; text-align: center; font-size: 12px; color: #94a3b8; border-top: 1px solid #e2e8f0; }
+          </style>
+        </head>
+        <body>
+          <div class="container">
+            <div class="header">
+              <h1>UNIVERSIDADE FEDERAL DO CEARÁ</h1>
+              <p>INSTITUTO UNIVERSIDADE VIRTUAL • SOLAR LMS</p>
+            </div>
+            <div class="content">
+              <div class="greeting">Olá, {{recipientName}}!</div>
+              <p>Recebemos uma solicitação para redefinir a sua senha de acesso ao <strong>Solar LMS</strong>.</p>
+              <p>Clique no botão abaixo para escolher uma nova senha com segurança:</p>
+              <div class="btn-container">
+                <a href="{{resetUrl}}" class="btn" target="_blank">Redefinir Minha Senha</a>
+              </div>
+              <p>Ou, se preferir, utilize o código de autorização diretamente na plataforma:</p>
+              <div class="token-box">
+                Código de Redefinição: <span class="token-code">{{resetToken}}</span>
+              </div>
+              <div class="notice">
+                <p>⏳ <strong>Atenção:</strong> Este link e código expiram em <strong>2 horas</strong>.</p>
+                <p>🛡️ Caso você não tenha solicitado esta redefinição, desconsidere este e-mail. Nenhuma alteração foi realizada em sua conta.</p>
+              </div>
+            </div>
+            <div class="footer">
+              Solar LMS • UFC Virtual • Desenvolvido com .NET 10 & React 19<br>
+              Campus do Pici - Bloco 901 - Fortaleza/CE
+            </div>
+          </div>
+        </body>
+        </html>
+        """;
     }
 }
 
@@ -48,7 +108,8 @@ public class PasswordResetService
         string emailOrUsernameOrCpf,
         ISolarAuthDbContext db,
         IEmailNotificationService emailService,
-        ISigaaAcademicService? sigaaService = null)
+        ISigaaAcademicService? sigaaService = null,
+        string? appBaseUrl = null)
     {
         if (string.IsNullOrWhiteSpace(emailOrUsernameOrCpf))
         {
@@ -108,7 +169,11 @@ public class PasswordResetService
                 _activeTokens[token] = (user.Id, DateTime.UtcNow.AddHours(2));
             }
 
-            await emailService.SendPasswordResetEmailAsync(user.Email, user.Name ?? user.Username, token);
+            string baseUrl = appBaseUrl ?? "https://solar.virtual.ufc.br";
+            string resetUrl = $"{baseUrl.TrimEnd('/')}/auth/reset-password?token={token}";
+            string htmlTemplate = UfcHtmlEmailTemplateBuilder.BuildPasswordResetHtml(user.Name ?? user.Username, token, resetUrl);
+
+            await emailService.SendPasswordResetEmailAsync(user.Email, user.Name ?? user.Username, token, htmlTemplate);
 
             var maskedEmail = MaskEmail(user.Email);
 
@@ -202,7 +267,7 @@ public class PasswordResetService
             }
 
             userId = tokenData.UserId;
-            _activeTokens.Remove(token.Trim().ToLowerInvariant());
+            _activeTokens.Remove(token.Trim().ToLowerInvariant()); // Single-use consumption
         }
 
         var user = await db.Users.FindAsync(userId);
@@ -212,6 +277,10 @@ public class PasswordResetService
         }
 
         user.EncryptedPassword = _passwordHasher.HashPassword(user, newPassword);
+        user.PasswordSalt = null;
+        user.SessionToken = Guid.NewGuid().ToString("N"); // Invalida todas as sessões anteriores globalmente
+        user.FailedAttempts = 0; // Desbloqueia conta se estava bloqueada
+        user.LockedAt = null;
         user.UpdatedAt = DateTime.UtcNow;
         await db.SaveChangesAsync();
 

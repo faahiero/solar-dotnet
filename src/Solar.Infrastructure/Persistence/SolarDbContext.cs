@@ -93,6 +93,11 @@ public class SolarDbContext : DbContext, ISolarAuthDbContext, IBlacklistDbContex
             entity.Ignore(e => e.LastSignInAt);
             entity.Ignore(e => e.CurrentSignInIp);
             entity.Ignore(e => e.LastSignInIp);
+            entity.Ignore(e => e.FailedAttempts);
+            entity.Ignore(e => e.LockedAt);
+            entity.Ignore(e => e.TermsAcceptedAt);
+            entity.Ignore(e => e.TermsAcceptedIp);
+            entity.Ignore(e => e.TermsVersion);
             entity.Property(e => e.Birthdate).HasColumnName("birthdate");
             entity.Property(e => e.EnrollmentCode).HasColumnName("enrollment_code").HasMaxLength(20);
             entity.Property(e => e.Cpf).HasColumnName("cpf").HasMaxLength(14);
