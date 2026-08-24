@@ -908,8 +908,8 @@ public class SolarDbContext : DbContext, ISolarAuthDbContext, IBlacklistDbContex
             entity.Property(e => e.Id).HasColumnName("id");
             entity.Property(e => e.Cpf).HasColumnName("cpf").HasMaxLength(11);
             entity.Property(e => e.UserId).HasColumnName("user_id");
-            entity.Property(e => e.Reason).HasColumnName("reason");
-            entity.Property(e => e.Active).HasColumnName("active").HasDefaultValue(true);
+            entity.Property(e => e.Reason).HasColumnName("name");
+            entity.Ignore(e => e.Active);
             entity.Property(e => e.CreatedAt).HasColumnName("created_at");
             entity.Property(e => e.UpdatedAt).HasColumnName("updated_at");
 
