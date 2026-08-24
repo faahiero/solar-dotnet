@@ -43,12 +43,13 @@ export const LoginScreen = ({ onLoginSuccess }: LoginScreenProps) => {
         body: JSON.stringify({ login: login.trim(), password })
       });
 
+      const data: LoginResponse = await response.json();
+
       if (!response.ok) {
-        setErrorMessage(t('login_error_invalid'));
+        setErrorMessage(data.message || t('login_error_invalid'));
         return;
       }
 
-      const data: LoginResponse = await response.json();
       if (data.success && data.user && data.token) {
         onLoginSuccess(data.user, data.token);
       } else {
@@ -82,7 +83,7 @@ export const LoginScreen = ({ onLoginSuccess }: LoginScreenProps) => {
       if (data.existsInLocal) {
         setCpfResult(data);
       } else {
-        // Redirecionamento direto para o formulário em 4 etapas idêntico ao Solar Ruby
+        // Redirecionamento direto para o formulário em 4 etapas
         setShowWizard(true);
       }
     } catch (err: any) {
@@ -96,6 +97,10 @@ export const LoginScreen = ({ onLoginSuccess }: LoginScreenProps) => {
     e.preventDefault();
     if (!sigaaPassword) {
       setErrorMessage('Por favor, informe uma senha para o seu acesso.');
+      return;
+    }
+    if (sigaaPassword.length < 8) {
+      setErrorMessage('A senha deve conter no mínimo 8 caracteres (recomendação NIST).');
       return;
     }
     if (sigaaPassword !== sigaaPasswordConf) {
@@ -113,7 +118,9 @@ export const LoginScreen = ({ onLoginSuccess }: LoginScreenProps) => {
         body: JSON.stringify({
           cpf: registerCpf.trim(),
           password: sigaaPassword,
-          passwordConfirmation: sigaaPasswordConf
+          passwordConfirmation: sigaaPasswordConf,
+          acceptTerms: true,
+          termsVersion: 'v2.0_2026'
         })
       });
 
@@ -327,7 +334,7 @@ export const LoginScreen = ({ onLoginSuccess }: LoginScreenProps) => {
                             <input
                               type="password"
                               className="solar-input-field"
-                              placeholder="Crie sua senha de acesso"
+                              placeholder="Crie sua senha (mín. 8 caracteres)"
                               value={sigaaPassword}
                               onChange={(e) => setSigaaPassword(e.target.value)}
                               style={{ marginBottom: '8px' }}
@@ -357,7 +364,7 @@ export const LoginScreen = ({ onLoginSuccess }: LoginScreenProps) => {
                         <div style={{ background: '#e0f2fe', color: '#0369a1', padding: '14px', borderRadius: '6px', border: '1px solid #7dd3fc' }}>
                           <p style={{ margin: '0 0 8px 0', fontWeight: 600 }}>ℹ️ {cpfResult.message}</p>
                           <p style={{ margin: '0 0 12px 0', fontSize: '0.8rem' }}>
-                            Você pode realizar seu cadastro individual em 4 etapas rápidas.
+                            Você pode realizar seu cadastro individual em 4 etapas rápidas com preenchimento automático por CEP.
                           </p>
                           <button
                             type="button"

@@ -8,13 +8,16 @@ public class RegisterUserUseCase
 {
     private readonly ISolarAuthDbContext _dbContext;
     private readonly IPasswordHasher<User> _passwordHasher;
+    private readonly PasswordPolicyService _passwordPolicy;
 
     public RegisterUserUseCase(
         ISolarAuthDbContext dbContext,
-        IPasswordHasher<User> passwordHasher)
+        IPasswordHasher<User> passwordHasher,
+        PasswordPolicyService passwordPolicy)
     {
         _dbContext = dbContext ?? throw new ArgumentNullException(nameof(dbContext));
         _passwordHasher = passwordHasher ?? throw new ArgumentNullException(nameof(passwordHasher));
+        _passwordPolicy = passwordPolicy ?? throw new ArgumentNullException(nameof(passwordPolicy));
     }
 
     public async Task<RegisterUserResponse> ExecuteAsync(RegisterUserRequest request, CancellationToken cancellationToken = default)
@@ -45,7 +48,18 @@ public class RegisterUserUseCase
         var sanitizedUsername = request.Username.Trim().ToLowerInvariant();
         var sanitizedEmail = request.Email.Trim().ToLowerInvariant();
 
-        // 2. Verifica duplicidades no banco de dados
+        // 2. Validação de Política e Força da Senha (NIST SP 800-63B)
+        var policyResult = _passwordPolicy.ValidatePassword(request.Password, sanitizedUsername, sanitizedCpf);
+        if (!policyResult.IsValid)
+        {
+            return new RegisterUserResponse
+            {
+                Success = false,
+                Message = policyResult.Errors.FirstOrDefault() ?? "A senha fornecida não atende aos requisitos de segurança."
+            };
+        }
+
+        // 3. Verifica duplicidades no banco de dados
         var existingCpf = await _dbContext.Users.AnyAsync(u => u.Cpf == sanitizedCpf || u.Cpf == request.Cpf, cancellationToken);
         if (existingCpf)
             return new RegisterUserResponse { Success = false, Message = "Este CPF já possui cadastro no Solar LMS." };
@@ -58,7 +72,7 @@ public class RegisterUserUseCase
         if (existingEmail)
             return new RegisterUserResponse { Success = false, Message = "Este endereço de e-mail já está cadastrado no sistema." };
 
-        // 3. Criação da entidade User
+        // 4. Criação da entidade User
         var user = new User
         {
             Name = request.Name.Trim(),
@@ -83,6 +97,9 @@ public class RegisterUserUseCase
             Registered = true,
             Selfregistration = true,
             Integrated = false,
+            TermsAcceptedAt = request.AcceptTerms ? DateTime.UtcNow : null,
+            TermsAcceptedIp = request.RemoteIp ?? "127.0.0.1",
+            TermsVersion = request.TermsVersion ?? "v2.0_2026",
             CreatedAt = DateTime.UtcNow,
             UpdatedAt = DateTime.UtcNow
         };
@@ -121,6 +138,17 @@ public class RegisterUserUseCase
 
         var sanitizedCpf = request.Cpf.Replace(".", "").Replace("-", "").Trim();
 
+        // Validação de Política de Senha
+        var policyResult = _passwordPolicy.ValidatePassword(request.Password, sanitizedCpf, sanitizedCpf);
+        if (!policyResult.IsValid)
+        {
+            return new RegisterUserResponse
+            {
+                Success = false,
+                Message = policyResult.Errors.FirstOrDefault() ?? "A senha fornecida não atende aos requisitos de segurança."
+            };
+        }
+
         // Verifica se já existe localmente
         var localUser = await _dbContext.Users.FirstOrDefaultAsync(u => u.Cpf == sanitizedCpf || u.Cpf == request.Cpf, cancellationToken);
         if (localUser != null)
@@ -146,6 +174,9 @@ public class RegisterUserUseCase
             Registered = true,
             Selfregistration = true,
             Integrated = true,
+            TermsAcceptedAt = request.AcceptTerms ? DateTime.UtcNow : null,
+            TermsAcceptedIp = request.RemoteIp ?? "127.0.0.1",
+            TermsVersion = request.TermsVersion ?? "v2.0_2026",
             CreatedAt = DateTime.UtcNow,
             UpdatedAt = DateTime.UtcNow
         };
@@ -158,13 +189,13 @@ public class RegisterUserUseCase
         return new RegisterUserResponse
         {
             Success = true,
-            Message = "Dados sincronizados com sucesso a partir do SIGAA! Acesso liberado.",
+            Message = "Conta ativada e sincronizada com sucesso a partir dos dados do SIGAA!",
             User = new UserProfileDto
             {
                 Id = user.Id,
                 Username = user.Username,
-                Name = user.Name,
-                Email = user.Email,
+                Name = user.Name ?? user.Username,
+                Email = user.Email ?? string.Empty,
                 Cpf = user.Cpf,
                 ProfileTypes = 1
             }

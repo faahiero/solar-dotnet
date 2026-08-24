@@ -34,11 +34,13 @@ public class JwtTokenService : IJwtTokenService
         var claims = new Dictionary<string, object>
         {
             [JwtRegisteredClaimNames.Sub] = user.Id.ToString(),
+            [ClaimTypes.NameIdentifier] = user.Id.ToString(),
             [JwtRegisteredClaimNames.UniqueName] = user.Username,
             [JwtRegisteredClaimNames.Name] = user.Name ?? user.Username,
             [JwtRegisteredClaimNames.Email] = user.Email ?? "",
             [JwtRegisteredClaimNames.Jti] = Guid.NewGuid().ToString("N"),
             ["role"] = user.Role,
+            [ClaimTypes.Role] = user.Role,
             ["cpf"] = user.Cpf ?? ""
         };
 
@@ -113,6 +115,44 @@ public class JwtTokenService : IJwtTokenService
         catch
         {
             return false;
+        }
+    }
+
+    public ClaimsPrincipal? ValidateToken(string token)
+    {
+        if (string.IsNullOrWhiteSpace(token) || IsTokenRevoked(token))
+        {
+            return null;
+        }
+
+        try
+        {
+            var handler = new JsonWebTokenHandler();
+            var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_config.SecretKey));
+            var validationParameters = new TokenValidationParameters
+            {
+                ValidateIssuer = true,
+                ValidIssuer = _config.Issuer,
+                ValidateAudience = true,
+                ValidAudience = _config.Audience,
+                ValidateIssuerSigningKey = true,
+                IssuerSigningKey = key,
+                ValidateLifetime = true,
+                ClockSkew = TimeSpan.FromMinutes(1)
+            };
+
+            var result = handler.ValidateTokenAsync(token, validationParameters).GetAwaiter().GetResult();
+            if (!result.IsValid)
+            {
+                return null;
+            }
+
+            var identity = new ClaimsIdentity(result.ClaimsIdentity.Claims, "Jwt");
+            return new ClaimsPrincipal(identity);
+        }
+        catch
+        {
+            return null;
         }
     }
 

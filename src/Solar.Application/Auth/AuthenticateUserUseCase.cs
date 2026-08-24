@@ -13,7 +13,8 @@ public interface ISolarAuthDbContext
 /// <summary>
 /// Caso de uso completo de autenticação do Solar LMS (.NET 10).
 /// Espelha o Devise LoginController original com suporte a Login por Username/CPF,
-/// validação de senhas legadas Devise (SHA1/MD5) e upgrade transparente para PBKDF2.
+/// validação de senhas legadas Devise (SHA1/MD5), upgrade transparente para PBKDF2,
+/// proteção contra força bruta (Account Lockout) e autenticação em duas etapas (2FA / TOTP).
 /// </summary>
 public class AuthenticateUserUseCase
 {
@@ -60,28 +61,51 @@ public class AuthenticateUserUseCase
             };
         }
 
-        // 2. Verificação de Senha Híbrida
+        // 2. Verificação de Bloqueio Temporário (Account Lockout)
+        if (user.LockedAt.HasValue && user.LockedAt.Value.AddMinutes(15) > DateTime.UtcNow)
+        {
+            var remainingMinutes = Math.Ceiling((user.LockedAt.Value.AddMinutes(15) - DateTime.UtcNow).TotalMinutes);
+            return new LoginResponse
+            {
+                Success = false,
+                Message = $"Conta bloqueada temporariamente por excesso de tentativas incorretas. Tente novamente em {remainingMinutes} minuto(s)."
+            };
+        }
+
+        // 3. Verificação de Senha Híbrida
         var verificationResult = _passwordHasher.VerifyHashedPassword(user, user.EncryptedPassword, request.Password);
 
         if (verificationResult == PasswordVerificationResult.Failed)
         {
+            user.FailedAttempts++;
+            if (user.FailedAttempts >= 5)
+            {
+                user.LockedAt = DateTime.UtcNow;
+            }
+            await _dbContext.SaveChangesAsync(cancellationToken);
+
             return new LoginResponse
             {
                 Success = false,
-                Message = "Usuário ou senha inválidos."
+                Message = user.FailedAttempts >= 5
+                    ? "Conta bloqueada temporariamente por 15 minutos após 5 tentativas incorretas."
+                    : "Usuário ou senha inválidos."
             };
         }
 
-        bool rehashNeeded = verificationResult == PasswordVerificationResult.SuccessRehashNeeded;
+        // 4. Se a senha confere, limpa contadores de falha
+        user.FailedAttempts = 0;
+        user.LockedAt = null;
 
-        // 3. Atualização transparente de hash para PBKDF2 se necessário
+        // 5. Atualização transparente de hash para PBKDF2 se necessário
+        bool rehashNeeded = verificationResult == PasswordVerificationResult.SuccessRehashNeeded;
         if (rehashNeeded)
         {
             user.EncryptedPassword = _passwordHasher.HashPassword(user, request.Password);
             user.PasswordSalt = null; // Salt não é mais necessário com PBKDF2
         }
 
-        // 4. Atualização de métricas de login do Devise
+        // 6. Atualização de métricas de login do Devise
         user.SignInCount++;
         user.LastSignInAt = user.CurrentSignInAt;
         user.CurrentSignInAt = DateTime.UtcNow;

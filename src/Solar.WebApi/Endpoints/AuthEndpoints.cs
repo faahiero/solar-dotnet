@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Solar.Application.Auth;
+using Solar.Application.Common;
 using Solar.Application.Integrations.Sigaa;
 using Solar.Domain.Entities;
 using Solar.Infrastructure.Identity;
@@ -8,11 +9,13 @@ using Solar.Infrastructure.Persistence;
 
 namespace Solar.WebApi.Endpoints;
 
+public record CheckPasswordPolicyRequest(string Password, string? Username = null, string? Cpf = null);
+
 public static class AuthEndpoints
 {
     public static IEndpointRouteBuilder MapAuthEndpoints(this IEndpointRouteBuilder app, IWebHostEnvironment environment)
     {
-        // Autenticação com suporte aos hashes legados Devise (SHA1 / SHA1-MD5 e busca por Username/CPF)
+        // Autenticação com suporte aos hashes legados Devise, Account Lockout e 2FA
         app.MapPost("/api/v1/auth/login", async (
             LoginRequest request,
             AuthenticateUserUseCase authUseCase,
@@ -26,7 +29,7 @@ public static class AuthEndpoints
 
             if (!result.Success || result.User == null)
             {
-                return Results.Unauthorized();
+                return Results.BadRequest(new { Success = false, Message = result.Message ?? "Usuário ou senha inválidos." });
             }
 
             // Gera token JWT criptográfico amarrado com Device Fingerprint
@@ -90,6 +93,24 @@ public static class AuthEndpoints
         })
         .WithName("Logout")
         .WithSummary("Encerra a sessão, remove cookies blindados e revoga o token no servidor");
+
+        // Consulta de CEP (ViaCEP / Busca CEP)
+        app.MapGet("/api/v1/cep/{cep}", async (string cep, CepLookupService cepService) =>
+        {
+            var result = await cepService.LookupAsync(cep);
+            return Results.Ok(result);
+        })
+        .WithName("LookupCep")
+        .WithSummary("Consulta dados de endereço a partir do CEP para preenchimento automático");
+
+        // Verificação de Força e Entropia da Senha (NIST SP 800-63B)
+        app.MapPost("/api/v1/auth/password-policy/check", (CheckPasswordPolicyRequest request, PasswordPolicyService policyService) =>
+        {
+            var result = policyService.ValidatePassword(request.Password, request.Username, request.Cpf);
+            return Results.Ok(result);
+        })
+        .WithName("CheckPasswordPolicy")
+        .WithSummary("Verifica a força e conformidade da senha em tempo real");
 
         // Verificação de CPF para Autocadastro (espelha verify_cpf_users_path)
         app.MapPost("/api/v1/auth/verify-cpf", async (
@@ -174,7 +195,7 @@ public static class AuthEndpoints
             httpContext.Response.Cookies.Append("solar_access_token", token, new CookieOptions
             {
                 HttpOnly = true,
-                Secure = false,
+                Secure = !environment.IsDevelopment(),
                 SameSite = SameSiteMode.Strict,
                 Expires = DateTimeOffset.UtcNow.AddDays(1),
                 Path = "/"
@@ -229,7 +250,7 @@ public static class AuthEndpoints
             httpContext.Response.Cookies.Append("solar_access_token", token, new CookieOptions
             {
                 HttpOnly = true,
-                Secure = false,
+                Secure = !environment.IsDevelopment(),
                 SameSite = SameSiteMode.Strict,
                 Expires = DateTimeOffset.UtcNow.AddDays(1),
                 Path = "/"
@@ -275,7 +296,7 @@ public static class AuthEndpoints
         })
         .RequireRateLimiting("AuthLimiter")
         .WithName("ResetPassword")
-        .WithSummary("Valida o token e altera a senha do usuário");
+        .WithSummary("Valida o token e altera a senha do usuário com revogação global de sessões");
 
         // Provedor OAuth2 de Tokens JWT (Substitui Doorkeeper do Ruby - RFC 6749)
         app.MapPost("/api/v1/oauth/token", async (

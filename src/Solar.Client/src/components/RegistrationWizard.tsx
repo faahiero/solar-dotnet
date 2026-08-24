@@ -16,6 +16,13 @@ export const RegistrationWizard: React.FC<RegistrationWizardProps> = ({
   const [loading, setLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
+  // CEP lookup state
+  const [cepLoading, setCepLoading] = useState(false);
+  const [cepMessage, setCepMessage] = useState<string | null>(null);
+
+  // LGPD consent state
+  const [acceptTerms, setAcceptTerms] = useState(true);
+
   // Form State
   const [formData, setFormData] = useState({
     name: '',
@@ -48,6 +55,55 @@ export const RegistrationWizard: React.FC<RegistrationWizardProps> = ({
     setErrorMessage(null);
   };
 
+  const handleCepChange = async (cepInput: string) => {
+    handleChange('zipcode', cepInput);
+    const clean = cepInput.replace(/\D/g, '');
+    if (clean.length === 8) {
+      setCepLoading(true);
+      setCepMessage('Consultando CEP...');
+      try {
+        const res = await fetch(`/api/v1/cep/${clean}`);
+        if (res.ok) {
+          const data = await res.json();
+          if (data.found) {
+            setFormData((prev) => ({
+              ...prev,
+              address: data.logradouro || prev.address,
+              addressNeighborhood: data.bairro || prev.addressNeighborhood,
+              city: data.localidade || prev.city,
+              state: data.uf || prev.state
+            }));
+            setCepMessage('✅ Endereço preenchido automaticamente.');
+          } else {
+            setCepMessage('⚠️ CEP não localizado na base dos Correios.');
+          }
+        }
+      } catch {
+        setCepMessage(null);
+      } finally {
+        setCepLoading(false);
+      }
+    } else {
+      setCepMessage(null);
+    }
+  };
+
+  const calculatePasswordStrength = (pwd: string) => {
+    if (!pwd) return { score: 0, label: '', color: '#ccc' };
+    let score = 0;
+    if (pwd.length >= 8) score += 30;
+    if (/[A-Z]/.test(pwd)) score += 20;
+    if (/[a-z]/.test(pwd)) score += 20;
+    if (/[0-9]/.test(pwd)) score += 15;
+    if (/[^A-Za-z0-9]/.test(pwd)) score += 15;
+    if (score >= 80) return { score: 100, label: 'Muito Forte', color: '#16a34a' };
+    if (score >= 60) return { score: 75, label: 'Forte', color: '#2563eb' };
+    if (score >= 40) return { score: 50, label: 'Média', color: '#eab308' };
+    return { score: 25, label: 'Fraca (recomendado min. 8 caracteres com letras e números)', color: '#dc2626' };
+  };
+
+  const pwdStrength = calculatePasswordStrength(formData.password);
+
   const handleNext = () => {
     if (currentStep === 1) {
       if (!formData.name.trim()) {
@@ -62,6 +118,10 @@ export const RegistrationWizard: React.FC<RegistrationWizardProps> = ({
       }
       if (!formData.password) {
         setErrorMessage('Por favor, defina uma senha de acesso.');
+        return;
+      }
+      if (formData.password.length < 8) {
+        setErrorMessage('A senha deve conter no mínimo 8 caracteres (recomendação NIST).');
         return;
       }
       if (formData.password !== formData.passwordConfirmation) {
@@ -91,6 +151,11 @@ export const RegistrationWizard: React.FC<RegistrationWizardProps> = ({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!acceptTerms) {
+      setErrorMessage('É necessário concordar com os Termos de Uso e Política de Privacidade LGPD.');
+      return;
+    }
+
     setLoading(true);
     setErrorMessage(null);
 
@@ -121,7 +186,9 @@ export const RegistrationWizard: React.FC<RegistrationWizardProps> = ({
           city: formData.city.trim() || null,
           telephone: formData.telephone.trim() || null,
           cellPhone: formData.cellPhone.trim() || null,
-          institution: formData.institution.trim() || null
+          institution: formData.institution.trim() || null,
+          acceptTerms: true,
+          termsVersion: 'v2.0_2026'
         })
       });
 
@@ -182,7 +249,7 @@ export const RegistrationWizard: React.FC<RegistrationWizardProps> = ({
             className={`solar-step-item ${currentStep === 4 ? 'active' : ''}`}
             onClick={() => currentStep > 3 && setCurrentStep(4)}
           >
-            <span className="solar-step-title">Outros</span>
+            <span className="solar-step-title">LGPD & Outros</span>
             <span className="solar-step-dot" />
           </div>
         </div>
@@ -207,8 +274,7 @@ export const RegistrationWizard: React.FC<RegistrationWizardProps> = ({
                     className="solar-form-input"
                     value={formData.name}
                     onChange={(e) => handleChange('name', e.target.value)}
-                    placeholder="Digite seu nome completo"
-                    autoFocus
+                    placeholder="Seu nome completo"
                     required
                   />
                 </div>
@@ -241,55 +307,57 @@ export const RegistrationWizard: React.FC<RegistrationWizardProps> = ({
               </div>
 
               <div className="solar-form-row">
-                <label className="solar-form-label">Gênero</label>
-                <div className="solar-form-control-col">
-                  <select
-                    className="solar-form-select"
-                    value={formData.gender}
-                    onChange={(e) => handleChange('gender', e.target.value)}
-                  >
-                    <option value="true">Masculino</option>
-                    <option value="false">Feminino</option>
-                  </select>
+                <label className="solar-form-label">Sexo</label>
+                <div className="solar-form-control-col radio-group">
+                  <label className="solar-radio-label">
+                    <input
+                      type="radio"
+                      name="gender"
+                      value="true"
+                      checked={formData.gender === 'true'}
+                      onChange={(e) => handleChange('gender', e.target.value)}
+                    />
+                    Masculino
+                  </label>
+                  <label className="solar-radio-label">
+                    <input
+                      type="radio"
+                      name="gender"
+                      value="false"
+                      checked={formData.gender === 'false'}
+                      onChange={(e) => handleChange('gender', e.target.value)}
+                    />
+                    Feminino
+                  </label>
                 </div>
               </div>
 
               <div className="solar-form-row">
-                <label className="solar-form-label">Necessidades especiais</label>
+                <label className="solar-form-label">Portador de Necessidades Especiais</label>
                 <div className="solar-form-control-col">
-                  <div className="solar-radio-group">
-                    <label className={`solar-radio-chip ${formData.hasSpecialNeeds ? 'selected' : ''}`}>
-                      <input
-                        type="radio"
-                        name="hasSpecialNeeds"
-                        checked={formData.hasSpecialNeeds}
-                        onChange={() => handleChange('hasSpecialNeeds', true)}
-                      />
-                      <span>Sim</span>
-                    </label>
-                    <label className={`solar-radio-chip ${!formData.hasSpecialNeeds ? 'selected' : ''}`}>
-                      <input
-                        type="radio"
-                        name="hasSpecialNeeds"
-                        checked={!formData.hasSpecialNeeds}
-                        onChange={() => handleChange('hasSpecialNeeds', false)}
-                      />
-                      <span>Não</span>
-                    </label>
-                  </div>
+                  <label className="solar-checkbox-label">
+                    <input
+                      type="checkbox"
+                      checked={formData.hasSpecialNeeds}
+                      onChange={(e) => handleChange('hasSpecialNeeds', e.target.checked)}
+                    />
+                    Sim, necessito de recursos de acessibilidade
+                  </label>
                 </div>
               </div>
 
               {formData.hasSpecialNeeds && (
                 <div className="solar-form-row">
-                  <label className="solar-form-label">Descrição</label>
+                  <label className="solar-form-label">
+                    <span className="required-star">*</span> Descrição da Necessidade
+                  </label>
                   <div className="solar-form-control-col">
                     <input
                       type="text"
                       className="solar-form-input"
                       value={formData.specialNeeds}
                       onChange={(e) => handleChange('specialNeeds', e.target.value)}
-                      placeholder="Especifique a necessidade para adaptações de acessibilidade"
+                      placeholder="Ex: Baixa visão, Deficiência auditiva, Mobilidade reduzida"
                     />
                   </div>
                 </div>
@@ -297,25 +365,27 @@ export const RegistrationWizard: React.FC<RegistrationWizardProps> = ({
             </div>
           )}
 
-          {/* ETAPA 2: ACESSO */}
+          {/* ETAPA 2: DADOS DE ACESSO */}
           {currentStep === 2 && (
             <div className="solar-step-panel">
               <div className="solar-form-row">
-                <label className="solar-form-label">Apelido (Nome Social)</label>
+                <label className="solar-form-label">
+                  <span className="required-star">*</span> Apelido (Nick)
+                </label>
                 <div className="solar-form-control-col">
                   <input
                     type="text"
                     className="solar-form-input"
                     value={formData.nick}
                     onChange={(e) => handleChange('nick', e.target.value)}
-                    placeholder="Como deseja ser chamado(a)"
+                    placeholder="Como deseja ser chamado no chat/fórum"
                   />
                 </div>
               </div>
 
               <div className="solar-form-row">
                 <label className="solar-form-label">
-                  <span className="required-star">*</span> Login
+                  <span className="required-star">*</span> Login (Username)
                 </label>
                 <div className="solar-form-control-col">
                   <input
@@ -323,8 +393,7 @@ export const RegistrationWizard: React.FC<RegistrationWizardProps> = ({
                     className="solar-form-input"
                     value={formData.username}
                     onChange={(e) => handleChange('username', e.target.value)}
-                    placeholder="Seu nome de usuário de acesso"
-                    autoFocus
+                    placeholder="nome.sobrenome (apenas letras, números e ponto)"
                     required
                   />
                 </div>
@@ -340,9 +409,20 @@ export const RegistrationWizard: React.FC<RegistrationWizardProps> = ({
                     className="solar-form-input"
                     value={formData.password}
                     onChange={(e) => handleChange('password', e.target.value)}
-                    placeholder="Mínimo de 6 caracteres"
+                    placeholder="Mínimo 8 caracteres com letras e números"
                     required
                   />
+                  {formData.password && (
+                    <div style={{ marginTop: '6px' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', marginBottom: '2px' }}>
+                        <span>Força da Senha:</span>
+                        <strong style={{ color: pwdStrength.color }}>{pwdStrength.label}</strong>
+                      </div>
+                      <div style={{ height: '5px', backgroundColor: '#e2e8f0', borderRadius: '4px', overflow: 'hidden' }}>
+                        <div style={{ height: '100%', width: `${pwdStrength.score}%`, backgroundColor: pwdStrength.color, transition: 'all 0.3s' }} />
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
 
@@ -408,9 +488,41 @@ export const RegistrationWizard: React.FC<RegistrationWizardProps> = ({
             </div>
           )}
 
-          {/* ETAPA 3: CONTATO */}
+          {/* ETAPA 3: CONTATO COM PREENCHIMENTO VIA CEP */}
           {currentStep === 3 && (
             <div className="solar-step-panel">
+              <div className="solar-form-row-multi">
+                <div className="solar-form-row" style={{ flex: 1.2 }}>
+                  <label className="solar-form-label" style={{ width: '130px' }}>CEP</label>
+                  <div style={{ flex: 1 }}>
+                    <input
+                      type="text"
+                      className="solar-form-input"
+                      value={formData.zipcode}
+                      onChange={(e) => handleCepChange(e.target.value)}
+                      placeholder="00000-000 (preenchimento automático)"
+                    />
+                    {cepMessage && (
+                      <div style={{ fontSize: '0.75rem', marginTop: '4px', color: cepLoading ? '#2563eb' : '#475569' }}>
+                        {cepMessage}
+                      </div>
+                    )}
+                  </div>
+                </div>
+                <div className="solar-form-row" style={{ flex: 1 }}>
+                  <label className="solar-form-label" style={{ width: '80px' }}>Estado</label>
+                  <select
+                    className="solar-form-select"
+                    value={formData.state}
+                    onChange={(e) => handleChange('state', e.target.value)}
+                  >
+                    {states.map((st) => (
+                      <option key={st} value={st}>{st}</option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
               <div className="solar-form-row">
                 <label className="solar-form-label">Endereço</label>
                 <div className="solar-form-control-col">
@@ -460,31 +572,6 @@ export const RegistrationWizard: React.FC<RegistrationWizardProps> = ({
                 </div>
               </div>
 
-              <div className="solar-form-row-multi">
-                <div className="solar-form-row" style={{ flex: 1.2 }}>
-                  <label className="solar-form-label" style={{ width: '130px' }}>CEP</label>
-                  <input
-                    type="text"
-                    className="solar-form-input"
-                    value={formData.zipcode}
-                    onChange={(e) => handleChange('zipcode', e.target.value)}
-                    placeholder="00000-000"
-                  />
-                </div>
-                <div className="solar-form-row" style={{ flex: 1 }}>
-                  <label className="solar-form-label" style={{ width: '80px' }}>Estado</label>
-                  <select
-                    className="solar-form-select"
-                    value={formData.state}
-                    onChange={(e) => handleChange('state', e.target.value)}
-                  >
-                    {states.map((st) => (
-                      <option key={st} value={st}>{st}</option>
-                    ))}
-                  </select>
-                </div>
-              </div>
-
               <div className="solar-form-row">
                 <label className="solar-form-label">Cidade</label>
                 <div className="solar-form-control-col">
@@ -523,7 +610,7 @@ export const RegistrationWizard: React.FC<RegistrationWizardProps> = ({
             </div>
           )}
 
-          {/* ETAPA 4: OUTROS */}
+          {/* ETAPA 4: OUTROS & LGPD */}
           {currentStep === 4 && (
             <div className="solar-step-panel">
               <div className="solar-form-row">
@@ -551,6 +638,22 @@ export const RegistrationWizard: React.FC<RegistrationWizardProps> = ({
                   <div><strong>UF / Cidade:</strong> {formData.city ? `${formData.city} - ${formData.state}` : formData.state}</div>
                   <div><strong>Instituição:</strong> {formData.institution}</div>
                 </div>
+              </div>
+
+              {/* Termos de Uso e LGPD */}
+              <div style={{ marginTop: '16px', padding: '12px', backgroundColor: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '8px' }}>
+                <label style={{ display: 'flex', alignItems: 'flex-start', gap: '10px', fontSize: '0.84rem', color: '#1e293b', cursor: 'pointer' }}>
+                  <input
+                    type="checkbox"
+                    checked={acceptTerms}
+                    onChange={(e) => setAcceptTerms(e.target.checked)}
+                    style={{ marginTop: '3px' }}
+                    required
+                  />
+                  <span>
+                    <span className="required-star">*</span> Declaro que li e concordo com os <strong>Termos de Uso</strong> e a <strong>Política de Privacidade da UFC Virtual</strong>, autorizando o tratamento dos meus dados pessoais estritamente para fins acadêmicos em conformidade com a <strong>LGPD (Lei nº 13.709/2018)</strong>.
+                  </span>
+                </label>
               </div>
             </div>
           )}
@@ -585,7 +688,7 @@ export const RegistrationWizard: React.FC<RegistrationWizardProps> = ({
                 <button
                   type="submit"
                   className="solar-btn-wizard-complete"
-                  disabled={loading}
+                  disabled={loading || !acceptTerms}
                 >
                   {loading ? 'Cadastrando...' : 'Concluir'}
                 </button>
