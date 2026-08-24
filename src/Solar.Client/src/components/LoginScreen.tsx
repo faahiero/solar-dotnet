@@ -62,6 +62,21 @@ export const LoginScreen = ({ onLoginSuccess }: LoginScreenProps) => {
     }
   };
 
+  // Formatação automática de CPF (000.000.000-00) idêntica à de esqueci senha
+  const handleRegisterCpfChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const raw = e.target.value;
+    const numbers = raw.replace(/\D/g, '').slice(0, 11);
+    let formatted = numbers;
+    if (numbers.length > 9) {
+      formatted = `${numbers.slice(0, 3)}.${numbers.slice(3, 6)}.${numbers.slice(6, 9)}-${numbers.slice(9)}`;
+    } else if (numbers.length > 6) {
+      formatted = `${numbers.slice(0, 3)}.${numbers.slice(3, 6)}.${numbers.slice(6)}`;
+    } else if (numbers.length > 3) {
+      formatted = `${numbers.slice(0, 3)}.${numbers.slice(3)}`;
+    }
+    setRegisterCpf(formatted);
+  };
+
   const handleVerifyCpf = async (e: FormEvent) => {
     e.preventDefault();
     if (!registerCpf) {
@@ -294,8 +309,9 @@ export const LoginScreen = ({ onLoginSuccess }: LoginScreenProps) => {
                       <input
                         type="text"
                         value={registerCpf}
-                        onChange={(e) => setRegisterCpf(e.target.value)}
-                        placeholder={t('cpf_placeholder')}
+                        onChange={handleRegisterCpfChange}
+                        placeholder="000.000.000-00"
+                        maxLength={14}
                         className="solar-input-field"
                         autoFocus
                       />
