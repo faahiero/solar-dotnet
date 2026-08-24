@@ -21,7 +21,7 @@ public record UserProfileDto
     public long Id { get; init; }
     public string Username { get; init; } = string.Empty;
     public string Name { get; init; } = string.Empty;
-    public string Email { get; init; } = string.Empty;
+    public string? Email { get; init; }
     public string? Cpf { get; init; }
     public int ProfileTypes { get; init; }
 }
