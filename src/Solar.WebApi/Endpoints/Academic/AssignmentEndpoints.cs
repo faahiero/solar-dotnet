@@ -208,10 +208,10 @@ public static class AssignmentEndpoints
 
                 foreach (var m in materials.Where(m => !string.IsNullOrEmpty(m.AttachmentFileName)))
                 {
-                    var entry = archive.CreateEntry(m.AttachmentFileName);
+                    var entry = archive.CreateEntry(m.AttachmentFileName!);
                     using var s = entry.Open();
                     using var w = new StreamWriter(s, Encoding.UTF8);
-                    w.WriteLine(m.Description ?? m.AttachmentFileName);
+                    w.WriteLine(m.Title ?? m.AttachmentFileName);
                 }
             }
 

@@ -66,7 +66,41 @@ public class SolarDbContext : DbContext, ISolarAuthDbContext, IBlacklistDbContex
     // Supporting Materials & Events
     public DbSet<SupportMaterialFile> SupportMaterialFiles => Set<SupportMaterialFile>();
     public DbSet<Bibliography> Bibliographies => Set<Bibliography>();
+    public DbSet<Author> Authors => Set<Author>();
     public DbSet<ScheduleEvent> ScheduleEvents => Set<ScheduleEvent>();
+    public DbSet<ScheduleEventFile> ScheduleEventFiles => Set<ScheduleEventFile>();
+    public DbSet<PublicFile> PublicFiles => Set<PublicFile>();
+    public DbSet<AssignmentEnunciationFile> AssignmentEnunciationFiles => Set<AssignmentEnunciationFile>();
+    public DbSet<DiscussionEnunciationFile> DiscussionEnunciationFiles => Set<DiscussionEnunciationFile>();
+    public DbSet<Comment> Comments => Set<Comment>();
+    public DbSet<CommentFile> CommentFiles => Set<CommentFile>();
+
+    // Chat & Webconferences
+    public DbSet<ChatRoom> ChatRooms => Set<ChatRoom>();
+    public DbSet<ChatMessage> ChatMessages => Set<ChatMessage>();
+    public DbSet<ChatParticipant> ChatParticipants => Set<ChatParticipant>();
+    public DbSet<Webconference> Webconferences => Set<Webconference>();
+    public DbSet<AssignmentWebconference> AssignmentWebconferences => Set<AssignmentWebconference>();
+
+    // Legal & LGPD
+    public DbSet<LegalDocumentVersion> LegalDocumentVersions => Set<LegalDocumentVersion>();
+    public DbSet<UserTermAcceptance> UserTermAcceptances => Set<UserTermAcceptance>();
+
+    // Audit & Logs
+    public DbSet<LogAccess> LogAccesses => Set<LogAccess>();
+    public DbSet<LogAction> LogActions => Set<LogAction>();
+
+    // User Preferences & Auxiliary
+    public DbSet<PersonalConfiguration> PersonalConfigurations => Set<PersonalConfiguration>();
+    public DbSet<QuestionLabel> QuestionLabels => Set<QuestionLabel>();
+    public DbSet<QuestionLabelQuestion> QuestionLabelsQuestions => Set<QuestionLabelQuestion>();
+
+    // RBAC & Menus
+    public DbSet<Menu> Menus => Set<Menu>();
+    public DbSet<Resource> Resources => Set<Resource>();
+    public DbSet<PermissionResource> PermissionsResources => Set<PermissionResource>();
+    public DbSet<Context> Contexts => Set<Context>();
+    public DbSet<MenuContext> MenusContexts => Set<MenuContext>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -860,13 +894,15 @@ public class SolarDbContext : DbContext, ISolarAuthDbContext, IBlacklistDbContex
             entity.ToTable("support_material_files");
             entity.HasKey(e => e.Id);
             entity.Property(e => e.Id).HasColumnName("id");
-            entity.Property(e => e.AttachmentFileName).HasColumnName("attachment_file_name").HasMaxLength(255).IsRequired();
+            entity.Property(e => e.AttachmentFileName).HasColumnName("attachment_file_name").HasMaxLength(255);
             entity.Property(e => e.AttachmentContentType).HasColumnName("attachment_content_type").HasMaxLength(255);
             entity.Property(e => e.AttachmentFileSize).HasColumnName("attachment_file_size");
-            entity.Property(e => e.Description).HasColumnName("description");
-            entity.Property(e => e.UserId).HasColumnName("user_id");
-            entity.Property(e => e.CreatedAt).HasColumnName("created_at");
-            entity.Property(e => e.UpdatedAt).HasColumnName("updated_at");
+            entity.Property(e => e.AttachmentUpdatedAt).HasColumnName("attachment_updated_at");
+            entity.Property(e => e.Folder).HasColumnName("folder").HasMaxLength(255);
+            entity.Property(e => e.Url).HasColumnName("url");
+            entity.Property(e => e.MaterialType).HasColumnName("material_type").HasDefaultValue(0);
+            entity.Property(e => e.Title).HasColumnName("title");
+            entity.Property(e => e.Order).HasColumnName("order");
         });
 
         // Bibliographies
@@ -875,12 +911,42 @@ public class SolarDbContext : DbContext, ISolarAuthDbContext, IBlacklistDbContex
             entity.ToTable("bibliographies");
             entity.HasKey(e => e.Id);
             entity.Property(e => e.Id).HasColumnName("id");
-            entity.Property(e => e.Author).HasColumnName("author").HasMaxLength(255).IsRequired();
-            entity.Property(e => e.Title).HasColumnName("title").HasMaxLength(255).IsRequired();
-            entity.Property(e => e.Publisher).HasColumnName("publisher").HasMaxLength(255);
-            entity.Property(e => e.Year).HasColumnName("year").HasMaxLength(10);
+            entity.Property(e => e.TypeBibliography).HasColumnName("type_bibliography");
+            entity.Property(e => e.Title).HasColumnName("title");
+            entity.Property(e => e.Subtitle).HasColumnName("subtitle");
+            entity.Property(e => e.Address).HasColumnName("address");
+            entity.Property(e => e.Publisher).HasColumnName("publisher");
+            entity.Property(e => e.CountPages).HasColumnName("count_pages");
+            entity.Property(e => e.Pages).HasColumnName("pages");
+            entity.Property(e => e.Volume).HasColumnName("volume");
+            entity.Property(e => e.Edition).HasColumnName("edition");
+            entity.Property(e => e.PublicationYear).HasColumnName("publication_year");
+            entity.Property(e => e.Periodicity).HasColumnName("periodicity");
+            entity.Property(e => e.Issn).HasColumnName("issn");
+            entity.Property(e => e.Isbn).HasColumnName("isbn");
             entity.Property(e => e.Url).HasColumnName("url");
-            entity.Property(e => e.TypeBibliography).HasColumnName("type_bibliography").HasDefaultValue(0);
+            entity.Property(e => e.AccessedIn).HasColumnName("accessed_in");
+            entity.Property(e => e.AttachmentFileName).HasColumnName("attachment_file_name");
+            entity.Property(e => e.AttachmentContentType).HasColumnName("attachment_content_type");
+            entity.Property(e => e.AttachmentFileSize).HasColumnName("attachment_file_size");
+            entity.Property(e => e.AttachmentUpdatedAt).HasColumnName("attachment_updated_at");
+            entity.Property(e => e.CreatedAt).HasColumnName("created_at");
+            entity.Property(e => e.UpdatedAt).HasColumnName("updated_at");
+
+            entity.HasMany(e => e.Authors)
+                .WithOne(a => a.Bibliography)
+                .HasForeignKey(a => a.BibliographyId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        // Authors
+        modelBuilder.Entity<Author>(entity =>
+        {
+            entity.ToTable("authors");
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Id).HasColumnName("id");
+            entity.Property(e => e.BibliographyId).HasColumnName("bibliography_id");
+            entity.Property(e => e.Name).HasColumnName("name").IsRequired();
             entity.Property(e => e.CreatedAt).HasColumnName("created_at");
             entity.Property(e => e.UpdatedAt).HasColumnName("updated_at");
         });
@@ -891,11 +957,15 @@ public class SolarDbContext : DbContext, ISolarAuthDbContext, IBlacklistDbContex
             entity.ToTable("schedule_events");
             entity.HasKey(e => e.Id);
             entity.Property(e => e.Id).HasColumnName("id");
-            entity.Property(e => e.Title).HasColumnName("title").HasMaxLength(255).IsRequired();
+            entity.Property(e => e.Title).HasColumnName("title").HasMaxLength(100);
             entity.Property(e => e.Description).HasColumnName("description");
             entity.Property(e => e.ScheduleId).HasColumnName("schedule_id");
-            entity.Property(e => e.Location).HasColumnName("location");
-            entity.Property(e => e.TypeEvent).HasColumnName("type_event").HasDefaultValue(0);
+            entity.Property(e => e.TypeEvent).HasColumnName("type_event").HasDefaultValue(2);
+            entity.Property(e => e.StartHour).HasColumnName("start_hour");
+            entity.Property(e => e.EndHour).HasColumnName("end_hour");
+            entity.Property(e => e.Place).HasColumnName("place");
+            entity.Property(e => e.Integrated).HasColumnName("integrated").HasDefaultValue(false);
+            entity.Property(e => e.ContentExam).HasColumnName("content_exam");
             entity.Property(e => e.CreatedAt).HasColumnName("created_at");
             entity.Property(e => e.UpdatedAt).HasColumnName("updated_at");
 
@@ -922,6 +992,505 @@ public class SolarDbContext : DbContext, ISolarAuthDbContext, IBlacklistDbContex
                 .WithMany()
                 .HasForeignKey(e => e.UserId)
                 .OnDelete(DeleteBehavior.SetNull);
+        });
+
+        // ChatRooms
+        modelBuilder.Entity<ChatRoom>(entity =>
+        {
+            entity.ToTable("chat_rooms");
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Id).HasColumnName("id");
+            entity.Property(e => e.Title).HasColumnName("title").HasMaxLength(120);
+            entity.Property(e => e.Description).HasColumnName("description");
+            entity.Property(e => e.ScheduleId).HasColumnName("schedule_id");
+            entity.Property(e => e.CreatedAt).HasColumnName("created_at");
+            entity.Property(e => e.UpdatedAt).HasColumnName("updated_at");
+
+            entity.HasOne(e => e.Schedule)
+                .WithMany()
+                .HasForeignKey(e => e.ScheduleId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        // ChatMessages
+        modelBuilder.Entity<ChatMessage>(entity =>
+        {
+            entity.ToTable("chat_messages");
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Id).HasColumnName("id");
+            entity.Property(e => e.ChatRoomId).HasColumnName("chat_room_id");
+            entity.Property(e => e.UserId).HasColumnName("user_id");
+            entity.Property(e => e.AllocationId).HasColumnName("allocation_id");
+            entity.Property(e => e.Message).HasColumnName("message").IsRequired();
+            entity.Property(e => e.CreatedAt).HasColumnName("created_at");
+            entity.Property(e => e.UserName).HasColumnName("user_name").HasMaxLength(255);
+            entity.Property(e => e.UserNick).HasColumnName("user_nick").HasMaxLength(255);
+
+            entity.HasOne(e => e.ChatRoom)
+                .WithMany(c => c.Messages)
+                .HasForeignKey(e => e.ChatRoomId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasOne(e => e.User)
+                .WithMany()
+                .HasForeignKey(e => e.UserId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasOne(e => e.Allocation)
+                .WithMany()
+                .HasForeignKey(e => e.AllocationId)
+                .OnDelete(DeleteBehavior.SetNull);
+        });
+
+        // ChatParticipants
+        modelBuilder.Entity<ChatParticipant>(entity =>
+        {
+            entity.ToTable("chat_participants");
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Id).HasColumnName("id");
+            entity.Property(e => e.ChatRoomId).HasColumnName("chat_room_id");
+            entity.Property(e => e.UserId).HasColumnName("user_id");
+            entity.Property(e => e.Status).HasColumnName("status").HasDefaultValue(1);
+            entity.Property(e => e.CreatedAt).HasColumnName("created_at");
+            entity.Property(e => e.UpdatedAt).HasColumnName("updated_at");
+
+            entity.HasOne(e => e.ChatRoom)
+                .WithMany(c => c.Participants)
+                .HasForeignKey(e => e.ChatRoomId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasOne(e => e.User)
+                .WithMany()
+                .HasForeignKey(e => e.UserId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        // Webconferences
+        modelBuilder.Entity<Webconference>(entity =>
+        {
+            entity.ToTable("webconferences");
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Id).HasColumnName("id");
+            entity.Property(e => e.UserId).HasColumnName("user_id");
+            entity.Property(e => e.Title).HasColumnName("title").IsRequired();
+            entity.Property(e => e.Description).HasColumnName("description");
+            entity.Property(e => e.InitialTime).HasColumnName("initial_time");
+            entity.Property(e => e.Duration).HasColumnName("duration");
+            entity.Property(e => e.IsRecorded).HasColumnName("is_recorded").HasDefaultValue(true);
+            entity.Property(e => e.SharedBetweenGroups).HasColumnName("shared_between_groups").HasDefaultValue(false);
+            entity.Property(e => e.OriginMeetingId).HasColumnName("origin_meeting_id");
+            entity.Property(e => e.Server).HasColumnName("server");
+            entity.Property(e => e.Downloadable).HasColumnName("downloadable").HasDefaultValue(false);
+            entity.Property(e => e.AnyoneCanSubmit).HasColumnName("anyone_can_submit").HasDefaultValue(false);
+            entity.Property(e => e.CreatedAt).HasColumnName("created_at");
+            entity.Property(e => e.UpdatedAt).HasColumnName("updated_at");
+
+            entity.HasOne(e => e.User)
+                .WithMany()
+                .HasForeignKey(e => e.UserId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        // AssignmentWebconferences
+        modelBuilder.Entity<AssignmentWebconference>(entity =>
+        {
+            entity.ToTable("assignment_webconferences");
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Id).HasColumnName("id");
+            entity.Property(e => e.AcademicAllocationUserId).HasColumnName("academic_allocation_user_id");
+            entity.Property(e => e.Title).HasColumnName("title").IsRequired();
+            entity.Property(e => e.InitialTime).HasColumnName("initial_time");
+            entity.Property(e => e.Duration).HasColumnName("duration");
+            entity.Property(e => e.IsRecorded).HasColumnName("is_recorded").HasDefaultValue(true);
+            entity.Property(e => e.OriginMeetingId).HasColumnName("origin_meeting_id");
+            entity.Property(e => e.Final).HasColumnName("final").HasDefaultValue(false);
+            entity.Property(e => e.Server).HasColumnName("server");
+            entity.Property(e => e.CreatedAt).HasColumnName("created_at");
+            entity.Property(e => e.UpdatedAt).HasColumnName("updated_at");
+
+            entity.HasOne(e => e.AcademicAllocationUser)
+                .WithMany()
+                .HasForeignKey(e => e.AcademicAllocationUserId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        // LegalDocumentVersions
+        modelBuilder.Entity<LegalDocumentVersion>(entity =>
+        {
+            entity.ToTable("legal_document_versions");
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Id).HasColumnName("id");
+            entity.Property(e => e.Kind).HasColumnName("kind");
+            entity.Property(e => e.VersionNumber).HasColumnName("version_number");
+            entity.Property(e => e.Content).HasColumnName("content");
+            entity.Property(e => e.ChangeSummary).HasColumnName("change_summary");
+            entity.Property(e => e.Status).HasColumnName("status").HasDefaultValue(0);
+            entity.Property(e => e.EffectiveAt).HasColumnName("effective_at");
+            entity.Property(e => e.PublishedAt).HasColumnName("published_at");
+            entity.Property(e => e.PublishedById).HasColumnName("published_by_id");
+            entity.Property(e => e.CreatedById).HasColumnName("created_by_id");
+            entity.Property(e => e.CreatedAt).HasColumnName("created_at");
+            entity.Property(e => e.UpdatedAt).HasColumnName("updated_at");
+
+            entity.HasOne(e => e.PublishedBy)
+                .WithMany()
+                .HasForeignKey(e => e.PublishedById)
+                .OnDelete(DeleteBehavior.SetNull);
+
+            entity.HasOne(e => e.CreatedBy)
+                .WithMany()
+                .HasForeignKey(e => e.CreatedById)
+                .OnDelete(DeleteBehavior.SetNull);
+        });
+
+        // UserTermAcceptances
+        modelBuilder.Entity<UserTermAcceptance>(entity =>
+        {
+            entity.ToTable("user_term_acceptances");
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Id).HasColumnName("id");
+            entity.Property(e => e.UserId).HasColumnName("user_id");
+            entity.Property(e => e.LegalDocumentVersionId).HasColumnName("legal_document_version_id");
+            entity.Property(e => e.AcceptedAt).HasColumnName("accepted_at");
+            entity.Property(e => e.IpAddress).HasColumnName("ip_address").IsRequired();
+            entity.Property(e => e.UserAgent).HasColumnName("user_agent");
+            entity.Property(e => e.ContentHash).HasColumnName("content_hash").IsRequired();
+            entity.Property(e => e.CreatedAt).HasColumnName("created_at");
+            entity.Property(e => e.UpdatedAt).HasColumnName("updated_at");
+
+            entity.HasOne(e => e.User)
+                .WithMany()
+                .HasForeignKey(e => e.UserId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasOne(e => e.LegalDocumentVersion)
+                .WithMany(l => l.Acceptances)
+                .HasForeignKey(e => e.LegalDocumentVersionId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        // LogAccesses
+        modelBuilder.Entity<LogAccess>(entity =>
+        {
+            entity.ToTable("log_accesses");
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Id).HasColumnName("id");
+            entity.Property(e => e.LogType).HasColumnName("log_type").HasDefaultValue(1);
+            entity.Property(e => e.UserId).HasColumnName("user_id");
+            entity.Property(e => e.AllocationTagId).HasColumnName("allocation_tag_id");
+            entity.Property(e => e.Ip).HasColumnName("ip");
+            entity.Property(e => e.CreatedAt).HasColumnName("created_at");
+
+            entity.HasOne(e => e.User)
+                .WithMany()
+                .HasForeignKey(e => e.UserId)
+                .OnDelete(DeleteBehavior.SetNull);
+
+            entity.HasOne(e => e.AllocationTag)
+                .WithMany()
+                .HasForeignKey(e => e.AllocationTagId)
+                .OnDelete(DeleteBehavior.SetNull);
+        });
+
+        // LogActions
+        modelBuilder.Entity<LogAction>(entity =>
+        {
+            entity.ToTable("log_actions");
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Id).HasColumnName("id");
+            entity.Property(e => e.LogType).HasColumnName("log_type");
+            entity.Property(e => e.UserId).HasColumnName("user_id");
+            entity.Property(e => e.AcademicAllocationId).HasColumnName("academic_allocation_id");
+            entity.Property(e => e.AcademicAllocationUserId).HasColumnName("academic_allocation_user_id");
+            entity.Property(e => e.AllocationTagId).HasColumnName("allocation_tag_id");
+            entity.Property(e => e.Description).HasColumnName("description");
+            entity.Property(e => e.Ip).HasColumnName("ip");
+            entity.Property(e => e.CreatedAt).HasColumnName("created_at");
+
+            entity.HasOne(e => e.User)
+                .WithMany()
+                .HasForeignKey(e => e.UserId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasOne(e => e.AcademicAllocation)
+                .WithMany()
+                .HasForeignKey(e => e.AcademicAllocationId)
+                .OnDelete(DeleteBehavior.SetNull);
+
+            entity.HasOne(e => e.AcademicAllocationUser)
+                .WithMany()
+                .HasForeignKey(e => e.AcademicAllocationUserId)
+                .OnDelete(DeleteBehavior.SetNull);
+
+            entity.HasOne(e => e.AllocationTag)
+                .WithMany()
+                .HasForeignKey(e => e.AllocationTagId)
+                .OnDelete(DeleteBehavior.SetNull);
+        });
+
+        // PersonalConfigurations
+        modelBuilder.Entity<PersonalConfiguration>(entity =>
+        {
+            entity.ToTable("personal_configurations");
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Id).HasColumnName("id");
+            entity.Property(e => e.UserId).HasColumnName("user_id");
+            entity.Property(e => e.Theme).HasColumnName("theme").HasDefaultValue("blue");
+            entity.Property(e => e.DefaultLocale).HasColumnName("default_locale").HasDefaultValue("pt_BR");
+            entity.Property(e => e.Message).HasColumnName("message").HasDefaultValue(true);
+            entity.Property(e => e.Exam).HasColumnName("exam").HasDefaultValue(true);
+            entity.Property(e => e.Post).HasColumnName("post").HasDefaultValue(true);
+            entity.Property(e => e.AcademicTool).HasColumnName("academic_tool").HasDefaultValue(true);
+
+            entity.HasOne(e => e.User)
+                .WithMany()
+                .HasForeignKey(e => e.UserId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        // PublicFiles
+        modelBuilder.Entity<PublicFile>(entity =>
+        {
+            entity.ToTable("public_files");
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Id).HasColumnName("id");
+            entity.Property(e => e.AllocationTagId).HasColumnName("allocation_tag_id");
+            entity.Property(e => e.UserId).HasColumnName("user_id");
+            entity.Property(e => e.AttachmentFileName).HasColumnName("attachment_file_name").HasMaxLength(255).IsRequired();
+            entity.Property(e => e.AttachmentContentType).HasColumnName("attachment_content_type").HasMaxLength(255);
+            entity.Property(e => e.AttachmentFileSize).HasColumnName("attachment_file_size");
+            entity.Property(e => e.AttachmentUpdatedAt).HasColumnName("attachment_updated_at");
+            entity.Property(e => e.IsPrivate).HasColumnName("is_private").HasDefaultValue(false);
+
+            entity.HasOne(e => e.AllocationTag)
+                .WithMany()
+                .HasForeignKey(e => e.AllocationTagId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasOne(e => e.User)
+                .WithMany()
+                .HasForeignKey(e => e.UserId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        // QuestionLabels & Questions
+        modelBuilder.Entity<QuestionLabel>(entity =>
+        {
+            entity.ToTable("question_labels");
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Id).HasColumnName("id");
+            entity.Property(e => e.Name).HasColumnName("name");
+            entity.Property(e => e.CreatedAt).HasColumnName("created_at");
+            entity.Property(e => e.UpdatedAt).HasColumnName("updated_at");
+        });
+
+        modelBuilder.Entity<QuestionLabelQuestion>(entity =>
+        {
+            entity.ToTable("question_labels_questions");
+            entity.HasKey(e => new { e.QuestionId, e.QuestionLabelId });
+            entity.Property(e => e.QuestionId).HasColumnName("question_id");
+            entity.Property(e => e.QuestionLabelId).HasColumnName("question_label_id");
+
+            entity.HasOne(e => e.Question)
+                .WithMany()
+                .HasForeignKey(e => e.QuestionId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasOne(e => e.QuestionLabel)
+                .WithMany(q => q.QuestionLabelQuestions)
+                .HasForeignKey(e => e.QuestionLabelId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        // AssignmentEnunciationFiles
+        modelBuilder.Entity<AssignmentEnunciationFile>(entity =>
+        {
+            entity.ToTable("assignment_enunciation_files");
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Id).HasColumnName("id");
+            entity.Property(e => e.AssignmentId).HasColumnName("assignment_id");
+            entity.Property(e => e.AttachmentFileName).HasColumnName("attachment_file_name").HasMaxLength(255).IsRequired();
+            entity.Property(e => e.AttachmentContentType).HasColumnName("attachment_content_type").HasMaxLength(255);
+            entity.Property(e => e.AttachmentFileSize).HasColumnName("attachment_file_size");
+            entity.Property(e => e.AttachmentUpdatedAt).HasColumnName("attachment_updated_at");
+
+            entity.HasOne(e => e.Assignment)
+                .WithMany()
+                .HasForeignKey(e => e.AssignmentId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        // DiscussionEnunciationFiles
+        modelBuilder.Entity<DiscussionEnunciationFile>(entity =>
+        {
+            entity.ToTable("discussion_enunciation_files");
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Id).HasColumnName("id");
+            entity.Property(e => e.DiscussionId).HasColumnName("discussion_id");
+            entity.Property(e => e.AttachmentFileName).HasColumnName("attachment_file_name");
+            entity.Property(e => e.AttachmentContentType).HasColumnName("attachment_content_type");
+            entity.Property(e => e.AttachmentFileSize).HasColumnName("attachment_file_size");
+            entity.Property(e => e.AttachmentUpdatedAt).HasColumnName("attachment_updated_at");
+            entity.Property(e => e.CreatedAt).HasColumnName("created_at");
+            entity.Property(e => e.UpdatedAt).HasColumnName("updated_at");
+
+            entity.HasOne(e => e.Discussion)
+                .WithMany()
+                .HasForeignKey(e => e.DiscussionId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        // ScheduleEventFiles
+        modelBuilder.Entity<ScheduleEventFile>(entity =>
+        {
+            entity.ToTable("schedule_event_files");
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Id).HasColumnName("id");
+            entity.Property(e => e.UserId).HasColumnName("user_id");
+            entity.Property(e => e.AcademicAllocationUserId).HasColumnName("academic_allocation_user_id");
+            entity.Property(e => e.AttachmentFileName).HasColumnName("attachment_file_name");
+            entity.Property(e => e.AttachmentContentType).HasColumnName("attachment_content_type");
+            entity.Property(e => e.AttachmentFileSize).HasColumnName("attachment_file_size");
+            entity.Property(e => e.FileCorrection).HasColumnName("file_correction");
+            entity.Property(e => e.CreatedAt).HasColumnName("created_at");
+            entity.Property(e => e.UpdatedAt).HasColumnName("updated_at");
+
+            entity.HasOne(e => e.User)
+                .WithMany()
+                .HasForeignKey(e => e.UserId)
+                .OnDelete(DeleteBehavior.SetNull);
+
+            entity.HasOne(e => e.AcademicAllocationUser)
+                .WithMany()
+                .HasForeignKey(e => e.AcademicAllocationUserId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        // Comments
+        modelBuilder.Entity<Comment>(entity =>
+        {
+            entity.ToTable("comments");
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Id).HasColumnName("id");
+            entity.Property(e => e.AcademicAllocationUserId).HasColumnName("academic_allocation_user_id");
+            entity.Property(e => e.UserId).HasColumnName("user_id");
+            entity.Property(e => e.Content).HasColumnName("comment");
+            entity.Property(e => e.CreatedAt).HasColumnName("created_at");
+            entity.Property(e => e.UpdatedAt).HasColumnName("updated_at");
+            entity.Property(e => e.RemovedAt).HasColumnName("removed_at");
+
+            entity.HasOne(e => e.AcademicAllocationUser)
+                .WithMany()
+                .HasForeignKey(e => e.AcademicAllocationUserId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasOne(e => e.User)
+                .WithMany()
+                .HasForeignKey(e => e.UserId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        // CommentFiles
+        modelBuilder.Entity<CommentFile>(entity =>
+        {
+            entity.ToTable("comment_files");
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Id).HasColumnName("id");
+            entity.Property(e => e.CommentId).HasColumnName("comment_id");
+            entity.Property(e => e.AttachmentFileName).HasColumnName("attachment_file_name").HasMaxLength(255).IsRequired();
+            entity.Property(e => e.AttachmentContentType).HasColumnName("attachment_content_type").HasMaxLength(255);
+            entity.Property(e => e.AttachmentFileSize).HasColumnName("attachment_file_size");
+            entity.Property(e => e.AttachmentUpdatedAt).HasColumnName("attachment_updated_at");
+
+            entity.HasOne(e => e.Comment)
+                .WithMany(c => c.Files)
+                .HasForeignKey(e => e.CommentId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        // Resources
+        modelBuilder.Entity<Resource>(entity =>
+        {
+            entity.ToTable("resources");
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Id).HasColumnName("id");
+            entity.Property(e => e.Description).HasColumnName("description").IsRequired();
+            entity.Property(e => e.Action).HasColumnName("action").IsRequired();
+            entity.Property(e => e.Controller).HasColumnName("controller").IsRequired();
+            entity.Property(e => e.Status).HasColumnName("status").HasDefaultValue(true);
+        });
+
+        // Menus
+        modelBuilder.Entity<Menu>(entity =>
+        {
+            entity.ToTable("menus");
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Id).HasColumnName("id");
+            entity.Property(e => e.ResourceId).HasColumnName("resource_id");
+            entity.Property(e => e.Name).HasColumnName("name").HasMaxLength(100);
+            entity.Property(e => e.Status).HasColumnName("status").HasDefaultValue(true);
+            entity.Property(e => e.Order).HasColumnName("order").HasDefaultValue(999);
+            entity.Property(e => e.ParentId).HasColumnName("parent_id");
+
+            entity.HasOne(e => e.Resource)
+                .WithMany(r => r.Menus)
+                .HasForeignKey(e => e.ResourceId)
+                .OnDelete(DeleteBehavior.SetNull);
+
+            entity.HasOne(e => e.Parent)
+                .WithMany(m => m.Children)
+                .HasForeignKey(e => e.ParentId)
+                .OnDelete(DeleteBehavior.Restrict);
+        });
+
+        // Contexts
+        modelBuilder.Entity<Context>(entity =>
+        {
+            entity.ToTable("contexts");
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Id).HasColumnName("id");
+            entity.Property(e => e.Name).HasColumnName("name").HasMaxLength(100).IsRequired();
+            entity.Property(e => e.Parameter).HasColumnName("parameter").HasMaxLength(45);
+        });
+
+        // MenusContexts
+        modelBuilder.Entity<MenuContext>(entity =>
+        {
+            entity.ToTable("menus_contexts");
+            entity.HasKey(e => new { e.MenuId, e.ContextId });
+            entity.Property(e => e.MenuId).HasColumnName("menu_id");
+            entity.Property(e => e.ContextId).HasColumnName("context_id");
+
+            entity.HasOne(e => e.Menu)
+                .WithMany(m => m.MenuContexts)
+                .HasForeignKey(e => e.MenuId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasOne(e => e.Context)
+                .WithMany(c => c.MenuContexts)
+                .HasForeignKey(e => e.ContextId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        // PermissionsResources
+        modelBuilder.Entity<PermissionResource>(entity =>
+        {
+            entity.ToTable("permissions_resources");
+            entity.HasKey(e => new { e.ProfileId, e.ResourceId });
+            entity.Property(e => e.ProfileId).HasColumnName("profile_id");
+            entity.Property(e => e.ResourceId).HasColumnName("resource_id");
+            entity.Property(e => e.PerId).HasColumnName("per_id").HasDefaultValue(false);
+            entity.Property(e => e.Status).HasColumnName("status").HasDefaultValue(true);
+
+            entity.HasOne(e => e.Profile)
+                .WithMany()
+                .HasForeignKey(e => e.ProfileId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasOne(e => e.Resource)
+                .WithMany(r => r.Permissions)
+                .HasForeignKey(e => e.ResourceId)
+                .OnDelete(DeleteBehavior.Cascade);
         });
     }
 }

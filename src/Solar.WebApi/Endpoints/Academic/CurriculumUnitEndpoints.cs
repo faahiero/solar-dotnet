@@ -189,6 +189,7 @@ public static class CurriculumUnitEndpoints
         {
             var bibliographies = await db.Bibliographies
                 .AsNoTracking()
+                .Include(b => b.Authors)
                 .OrderBy(b => b.Title)
                 .ToListAsync();
 
@@ -197,23 +198,23 @@ public static class CurriculumUnitEndpoints
                 .Select(b => new
                 {
                     Id = b.Id,
-                    Title = b.Title,
-                    Authors = b.Author,
-                    Year = b.Year,
-                    Publisher = b.Publisher,
+                    Title = b.Title ?? "Sem título",
+                    Authors = b.Authors.Any() ? string.Join(", ", b.Authors.Select(a => a.Name)) : "Autor institucional",
+                    Year = b.PublicationYear?.ToString() ?? "",
+                    Publisher = b.Publisher ?? "Editora Universitária",
                     AvailableOnline = !string.IsNullOrEmpty(b.Url),
                     Link = b.Url
                 }).ToList();
 
             var complementary = bibliographies
-                .Where(b => b.TypeBibliography == 2)
+                .Where(b => b.TypeBibliography >= 2)
                 .Select(b => new
                 {
                     Id = b.Id,
-                    Title = b.Title,
-                    Authors = b.Author,
-                    Year = b.Year,
-                    Publisher = b.Publisher,
+                    Title = b.Title ?? "Sem título",
+                    Authors = b.Authors.Any() ? string.Join(", ", b.Authors.Select(a => a.Name)) : "Autor institucional",
+                    Year = b.PublicationYear?.ToString() ?? "",
+                    Publisher = b.Publisher ?? "Editora Universitária",
                     AvailableOnline = !string.IsNullOrEmpty(b.Url),
                     Link = b.Url
                 }).ToList();
@@ -233,19 +234,19 @@ public static class CurriculumUnitEndpoints
         {
             var materials = await db.SupportMaterialFiles
                 .AsNoTracking()
-                .OrderByDescending(m => m.UpdatedAt)
+                .OrderByDescending(m => m.Id)
                 .ToListAsync();
 
             return Results.Ok(materials.Select(m => new
             {
                 Id = m.Id,
-                Title = m.AttachmentFileName,
+                Title = m.Title ?? m.AttachmentFileName ?? "Material Didático",
                 Author = "Docente / Coordenação",
-                UploadedAt = m.UpdatedAt.ToString("dd/MM/yyyy"),
-                Size = m.AttachmentFileSize > 0 ? $"{m.AttachmentFileSize / 1024} KB" : null,
+                UploadedAt = (m.AttachmentUpdatedAt ?? DateTime.UtcNow).ToString("dd/MM/yyyy"),
+                Size = m.AttachmentFileSize.HasValue && m.AttachmentFileSize > 0 ? $"{m.AttachmentFileSize / 1024} KB" : null,
                 Type = m.AttachmentContentType?.Contains("pdf") == true ? "PDF" : "Arquivo",
                 DownloadUrl = $"/api/v1/curriculum-units/{id}/materials/download-zip",
-                Category = m.Description
+                Category = m.Folder ?? "Geral"
             }));
         })
         .WithName("GetSharedMaterials")
@@ -283,10 +284,10 @@ public static class CurriculumUnitEndpoints
             return Results.Ok(scheduleEvents.Select(e => new
             {
                 Id = e.Id,
-                Title = e.Title,
+                Title = e.Title ?? "Evento Acadêmico",
                 Date = e.CreatedAt.ToString("dd/MM/yyyy"),
-                Time = e.CreatedAt.ToString("HH:mm"),
-                Location = e.Location,
+                Time = !string.IsNullOrEmpty(e.StartHour) ? e.StartHour : e.CreatedAt.ToString("HH:mm"),
+                Location = e.Place ?? "Ambiente Virtual",
                 Type = e.TypeEvent == 1 ? "Presencial" : "Virtual / Chat",
                 Description = e.Description
             }));
@@ -297,15 +298,19 @@ public static class CurriculumUnitEndpoints
         // Eventos da Agenda Geral (Consulta real na tabela schedule_events)
         group.MapGet("/api/v1/agenda", async (SolarDbContext db) =>
         {
-            var events = await db.ScheduleEvents.AsNoTracking().Take(15).ToListAsync();
+            var events = await db.ScheduleEvents
+                .AsNoTracking()
+                .OrderBy(e => e.CreatedAt)
+                .Take(15)
+                .ToListAsync();
 
             var eventList = events.Select(e => new
             {
                 Day = e.CreatedAt.Day,
-                Title = e.Title,
+                Title = e.Title ?? "Evento",
                 Type = e.TypeEvent == 1 ? "Presential" : "Academic",
-                Location = e.Location,
-                Time = e.CreatedAt.ToString("HH:mm")
+                Location = e.Place ?? "Ambiente Virtual",
+                Time = !string.IsNullOrEmpty(e.StartHour) ? e.StartHour : e.CreatedAt.ToString("HH:mm")
             }).ToList();
 
             return Results.Ok(new
