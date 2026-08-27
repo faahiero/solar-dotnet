@@ -163,6 +163,63 @@ public static class WebApplicationExtensions
                 );
                 db.SaveChanges();
             }
+
+            if (!db.CurriculumUnits.Any())
+            {
+                var course = new Course { Name = "Licenciatura em Letras / Química", Code = "LETR-QUI", CreatedAt = DateTime.UtcNow, UpdatedAt = DateTime.UtcNow };
+                var cu1 = new CurriculumUnit { Name = "Introdução à Linguística", Code = "RM404", WorkingHours = 64, Syllabus = "Fundamentos da Linguística", CreatedAt = DateTime.UtcNow, UpdatedAt = DateTime.UtcNow };
+                var cu2 = new CurriculumUnit { Name = "Química Geral I", Code = "RM301", WorkingHours = 64, Syllabus = "Estrutura da Matéria e Reações Químicas", CreatedAt = DateTime.UtcNow, UpdatedAt = DateTime.UtcNow };
+                var semester = new Semester { Name = "2026.1", CreatedAt = DateTime.UtcNow, UpdatedAt = DateTime.UtcNow };
+
+                db.Courses.Add(course);
+                db.CurriculumUnits.AddRange(cu1, cu2);
+                db.Semesters.Add(semester);
+                db.SaveChanges();
+
+                db.Offers.AddRange(
+                    new Offer { CurriculumUnitId = cu1.Id, CourseId = course.Id, SemesterId = semester.Id, CreatedAt = DateTime.UtcNow, UpdatedAt = DateTime.UtcNow },
+                    new Offer { CurriculumUnitId = cu2.Id, CourseId = course.Id, SemesterId = semester.Id, CreatedAt = DateTime.UtcNow, UpdatedAt = DateTime.UtcNow }
+                );
+                db.SaveChanges();
+            }
+
+            if (!db.Profiles.Any())
+            {
+                db.Profiles.AddRange(
+                    new Profile { Id = 1, Name = "student", Types = Solar.Domain.Enums.ProfileType.Student, Status = true, Description = "Aluno" },
+                    new Profile { Id = 2, Name = "tutor_distance", Types = Solar.Domain.Enums.ProfileType.ClassResponsible, Status = true, Description = "Tutor a Distância" },
+                    new Profile { Id = 3, Name = "tutor_presential", Types = Solar.Domain.Enums.ProfileType.Observer, Status = true, Description = "Tutor Presencial" },
+                    new Profile { Id = 4, Name = "teacher", Types = Solar.Domain.Enums.ProfileType.ClassResponsible, Status = true, Description = "Professor Titular" },
+                    new Profile { Id = 6, Name = "admin", Types = Solar.Domain.Enums.ProfileType.Admin, Status = true, Description = "Administrador" }
+                );
+                db.SaveChanges();
+            }
+
+            if (!db.Discussions.Any())
+            {
+                db.Discussions.Add(new Discussion { Name = "Fórum Temático 1", Description = "Debate sobre conceitos da disciplina", CreatedAt = DateTime.UtcNow, UpdatedAt = DateTime.UtcNow });
+                db.SaveChanges();
+            }
+
+            if (!db.Assignments.Any())
+            {
+                db.Assignments.Add(new Assignment { Name = "Trabalho 1", Enunciation = "Atividade prática", CreatedAt = DateTime.UtcNow, UpdatedAt = DateTime.UtcNow });
+                db.SaveChanges();
+            }
+
+            if (!db.Exams.Any())
+            {
+                var exam = new Exam { Name = "Prova Online 1", Description = "Avaliação oficial", BlockContent = true, CreatedAt = DateTime.UtcNow, UpdatedAt = DateTime.UtcNow };
+                var q1 = new Question { Enunciation = "Questão 1 de Avaliação", TypeQuestion = Solar.Domain.Enums.QuestionType.SingleChoice };
+                q1.QuestionItems.Add(new QuestionItem { Description = "Opção Correta", Value = true });
+                q1.QuestionItems.Add(new QuestionItem { Description = "Opção Incorreta", Value = false });
+                db.Exams.Add(exam);
+                db.Questions.Add(q1);
+                db.SaveChanges();
+
+                db.ExamQuestions.Add(new ExamQuestion { ExamId = exam.Id, QuestionId = q1.Id });
+                db.SaveChanges();
+            }
         }
         catch (Exception ex)
         {

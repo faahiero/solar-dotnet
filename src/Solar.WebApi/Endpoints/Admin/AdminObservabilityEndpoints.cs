@@ -8,18 +8,27 @@ public static class AdminObservabilityEndpoints
 {
     public static IEndpointRouteBuilder MapAdminObservabilityEndpoints(this IEndpointRouteBuilder group)
     {
-        // Listagem de Perfis Acadêmicos (Espelha perfis do Solar)
-        group.MapGet("/api/v1/admin/profiles", () => Results.Ok(new[]
+        // Listagem de Perfis Acadêmicos (Consulta real na tabela profiles do PostgreSQL)
+        group.MapGet("/api/v1/admin/profiles", async (SolarDbContext db) =>
         {
-            new { Id = 1, Name = "Aluno", Code = "student", Description = "Acesso ao ambiente de aprendizagem e realização de atividades." },
-            new { Id = 2, Name = "Tutor a Distância", Code = "tutor_distance", Description = "Acompanhamento pedagógico, moderação de fóruns e correções." },
-            new { Id = 3, Name = "Tutor Presencial", Code = "tutor_presential", Description = "Atendimento presencial no polo de apoio." },
-            new { Id = 4, Name = "Professor", Code = "teacher", Description = "Gestão pedagógica, criação de aulas, provas e lançamento de notas." },
-            new { Id = 8, Name = "Coordenador", Code = "coordinator", Description = "Supervisão acadêmica do curso e ofertas." },
-            new { Id = 16, Name = "Administrador Geral", Code = "admin", Description = "Acesso total à administração do Solar LMS." }
-        }))
+            var profiles = await db.Profiles
+                .AsNoTracking()
+                .OrderBy(p => p.Id)
+                .Select(p => new
+                {
+                    p.Id,
+                    p.Name,
+                    Code = p.Name.ToLower().Replace(" ", "_"),
+                    p.Types,
+                    p.Status,
+                    Description = p.Description ?? p.Name
+                })
+                .ToListAsync();
+
+            return Results.Ok(profiles);
+        })
         .WithName("AdminGetProfiles")
-        .WithSummary("Retorna a lista de perfis e papéis do sistema");
+        .WithSummary("Retorna a lista de perfis e papéis do sistema a partir do banco de dados");
 
         // Dashboard de Observabilidade e Logs Estruturados em Tempo Real
         group.MapGet("/api/v1/admin/logs", (int? limit, string? level, string? search) =>

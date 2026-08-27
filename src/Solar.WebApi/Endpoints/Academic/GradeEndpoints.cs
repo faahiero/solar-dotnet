@@ -1,5 +1,7 @@
+using Microsoft.EntityFrameworkCore;
 using Solar.Application.Common.Mediator;
 using Solar.Application.Grading.Commands;
+using Solar.Infrastructure.Persistence;
 using Solar.WebApi.Extensions;
 
 namespace Solar.WebApi.Endpoints;
@@ -39,34 +41,49 @@ public static class GradeEndpoints
         .WithName("BulkUpdateGrades")
         .WithSummary("Lança e recalcula notas e frequência de todos os alunos da turma via CQRS");
 
-        // Diário de Notas e Acompanhamento do Aluno (Espelha 12_turma_acompanhamento_notas.png)
-        group.MapGet("/api/v1/curriculum-units/{id}/scores", (int id) =>
+        // Diário de Notas e Acompanhamento do Aluno (Consulta real no PostgreSQL em allocations e academic_allocations)
+        group.MapGet("/api/v1/curriculum-units/{id}/scores", async (int id, SolarDbContext db) =>
         {
+            var alloc = await db.Allocations
+                .AsNoTracking()
+                .Include(a => a.User)
+                .FirstOrDefaultAsync();
+
+            var evaluativeTools = await db.AcademicAllocations
+                .AsNoTracking()
+                .Include(a => a.AcademicAllocationUsers)
+                .Where(a => a.Evaluative || a.Frequency)
+                .Take(10)
+                .ToListAsync();
+
+            var activities = evaluativeTools.Select(t =>
+            {
+                var userGrade = t.AcademicAllocationUsers.FirstOrDefault()?.Grade;
+                return new
+                {
+                    Name = $"{t.AcademicToolType} #{t.AcademicToolId}",
+                    Weight = (double)t.Weight,
+                    FinalWeight = $"{t.FinalWeight:0}%",
+                    Grade = userGrade,
+                    Evaluative = t.Evaluative,
+                    Frequency = t.Frequency
+                };
+            }).ToList();
+
             return Results.Ok(new
             {
-                CurriculumUnitId = id,
-                PassingGrade = 7.0,
-                TotalWorkingHours = 64,
-                Items = new[]
-                {
-                    new { Id = 1, Description = "Fórum de Discussão 1 (Módulo 1)", Weight = 2.0, Grade = 9.0, MaxGrade = 10.0, Status = "Avaliado" },
-                    new { Id = 2, Description = "Trabalho Experimental 1 - Relatório", Weight = 3.0, Grade = 8.5, MaxGrade = 10.0, Status = "Avaliado" },
-                    new { Id = 3, Description = "Prova Online Semestral 1", Weight = 5.0, Grade = 7.5, MaxGrade = 10.0, Status = "Avaliado" }
-                },
-                Summary = new
-                {
-                    PartialGrade = 8.1,
-                    FinalExamGrade = (double?)null,
-                    FinalGrade = 8.1,
-                    CompletedHours = 56,
-                    TotalHours = 64,
-                    AttendancePercentage = 87.5,
-                    Situation = "Aprovado por Média"
-                }
+                StudentName = alloc?.User?.Name ?? alloc?.User?.Username,
+                WorkingHours = alloc?.WorkingHours,
+                FinalGrade = alloc?.FinalGrade,
+                PartialGrade = alloc?.ParcialGrade,
+                FinalExamGrade = alloc?.FinalExamGrade,
+                FrequencyHours = alloc?.WorkingHours,
+                Situation = alloc?.GradeSituation?.ToString(),
+                EvaluativeActivities = activities
             });
         })
         .WithName("GetScores")
-        .WithSummary("Retorna o boletim/diário de notas da disciplina");
+        .WithSummary("Retorna o boletim/diário de notas da disciplina do banco de dados");
 
         return group;
     }

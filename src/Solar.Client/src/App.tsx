@@ -8,7 +8,8 @@ import { MySolarHome } from './components/MySolarHome';
 import { OfficialFooter } from './components/OfficialFooter';
 import './index.css';
 
-const CurriculumUnitView = lazy(() => import('./components/CurriculumUnitView').then(m => ({ default: m.CurriculumUnitView })));
+import { CurriculumUnitView } from './components/CurriculumUnitView';
+
 const MessagesView = lazy(() => import('./components/MessagesView').then(m => ({ default: m.MessagesView })));
 const AdminLogsView = lazy(() => import('./components/AdminLogsView').then(m => ({ default: m.AdminLogsView })));
 

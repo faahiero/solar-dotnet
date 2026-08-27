@@ -12,63 +12,43 @@ public static class AssignmentEndpoints
 {
     public static IEndpointRouteBuilder MapAssignmentEndpoints(this IEndpointRouteBuilder group)
     {
-        // Trabalhos e Portfólios da Disciplina (Espelha 11_turma_trabalhos_assignments.png)
+        // Trabalhos e Portfólios da Disciplina (Consulta real na tabela assignments e academic_allocations)
         group.MapGet("/api/v1/curriculum-units/{id}/assignments", async (int id, SolarDbContext db) =>
         {
-            try
-            {
-                var assignments = await db.Assignments
-                    .OrderByDescending(a => a.CreatedAt)
-                    .ToListAsync();
+            var assignments = await db.Assignments
+                .AsNoTracking()
+                .OrderByDescending(a => a.CreatedAt)
+                .ToListAsync();
 
-                if (assignments.Any())
-                {
-                    return Results.Ok(assignments.Select(a => new
-                    {
-                        a.Id,
-                        Title = a.Name,
-                        Type = a.TypeAssignment == 1 ? "Grupo" : "Individual / Arquivo",
-                        MaxGroupMembers = a.TypeAssignment == 1 ? 3 : 1,
-                        Weight = 2.0,
-                        Deadline = "20/09/2026 23:59",
-                        a.Enunciation,
-                        Status = "Aberto",
-                        Submitted = false
-                    }));
-                }
-            }
-            catch { }
+            var assignIds = assignments.Select(a => a.Id).ToList();
+            var academicAllocations = await db.AcademicAllocations
+                .AsNoTracking()
+                .Where(aa => aa.AcademicToolType == "Assignment" && assignIds.Contains(aa.AcademicToolId))
+                .ToListAsync();
 
-            return Results.Ok(new[]
+            var allocMap = academicAllocations
+                .GroupBy(aa => aa.AcademicToolId)
+                .ToDictionary(g => g.Key, g => g.First());
+
+            return Results.Ok(assignments.Select(a =>
             {
-                new
+                allocMap.TryGetValue(a.Id, out var aa);
+                return new
                 {
-                    Id = 1,
-                    Title = "Trabalho 1: Relatório de Prática Experimental - Ácido-Base",
-                    Type = "Individual / Arquivo",
-                    MaxGroupMembers = 1,
-                    Weight = 3.0,
-                    Deadline = "20/09/2026 23:59",
-                    Enunciation = "Elaborar relatório técnico-científico com os resultados obtidos na simulação de titulação ácido-base.",
-                    Status = "Aberto",
-                    Submitted = false
-                },
-                new
-                {
-                    Id = 2,
-                    Title = "Portfólio Semestral: Síntese dos Módulos 1 e 2",
-                    Type = "Grupo (até 3 alunos)",
-                    MaxGroupMembers = 3,
-                    Weight = 2.0,
-                    Deadline = "10/10/2026 23:59",
-                    Enunciation = "Construção colaborativa do mapa conceitual integrando cinética e termodinâmica química.",
-                    Status = "Pendente",
-                    Submitted = false
-                }
-            });
+                    a.Id,
+                    Title = a.Name,
+                    Type = a.TypeAssignment == 1 ? "Em Grupo" : "Individual / Arquivo",
+                    MaxGroupMembers = a.TypeAssignment == 1 ? 3 : 1,
+                    Weight = (double)(aa?.Weight ?? 1),
+                    FinalWeight = (double)(aa?.FinalWeight ?? 100),
+                    a.Enunciation,
+                    CreatedAt = a.CreatedAt.ToString("dd/MM/yyyy HH:mm"),
+                    UpdatedAt = a.UpdatedAt.ToString("dd/MM/yyyy HH:mm")
+                };
+            }));
         })
         .WithName("GetCurriculumUnitAssignments")
-        .WithSummary("Retorna os trabalhos da disciplina");
+        .WithSummary("Retorna os trabalhos da disciplina do banco de dados");
 
         // Criação de Trabalho pelo Professor (Espelha assignments_controller#create)
         group.MapPost("/api/v1/curriculum-units/{id}/assignments", async (
@@ -98,10 +78,8 @@ public static class AssignmentEndpoints
                 assignment.Id,
                 Title = assignment.Name,
                 Type = assignment.TypeAssignment == 1 ? "Grupo" : "Individual",
-                MaxGroupMembers = req.MaxGroupMembers <= 0 ? 1 : req.MaxGroupMembers,
-                Weight = req.Weight <= 0 ? 1.0 : req.Weight,
-                Deadline = DateTime.UtcNow.AddDays(15).ToString("dd/MM/yyyy HH:mm"),
-                assignment.Enunciation
+                assignment.Enunciation,
+                CreatedAt = assignment.CreatedAt.ToString("dd/MM/yyyy HH:mm")
             });
         })
         .WithName("CreateAssignment")
@@ -161,6 +139,13 @@ public static class AssignmentEndpoints
             SolarDbContext db,
             HttpContext httpContext) =>
         {
+            var assignment = await db.Assignments.FindAsync((long)assignmentId);
+            var files = await db.AssignmentFiles
+                .AsNoTracking()
+                .Include(f => f.User)
+                .Where(f => !string.IsNullOrEmpty(f.AttachmentFileName))
+                .ToListAsync();
+
             var memoryStream = new MemoryStream();
             using (var archive = new ZipArchive(memoryStream, ZipArchiveMode.Create, leaveOpen: true))
             {
@@ -168,27 +153,21 @@ public static class AssignmentEndpoints
                 using (var entryStream = readmeEntry.Open())
                 using (var writer = new StreamWriter(entryStream, Encoding.UTF8))
                 {
-                    writer.WriteLine($"==========================================================");
-                    writer.WriteLine($"SOLAR LMS - PACOTE DE ENTREGAS DE TRABALHO");
-                    writer.WriteLine($"Disciplina ID: {id} | Atividade ID: {assignmentId}");
+                    writer.WriteLine("==========================================================");
+                    writer.WriteLine("SOLAR LMS - PACOTE DE ENTREGAS DE TRABALHO");
+                    writer.WriteLine($"Disciplina ID: {id} | Atividade: {assignment?.Name ?? assignmentId.ToString()}");
                     writer.WriteLine($"Data de Exportação: {DateTime.UtcNow:dd/MM/yyyy HH:mm:ss} UTC");
-                    writer.WriteLine($"==========================================================");
-                    writer.WriteLine();
-                    writer.WriteLine("Contém os trabalhos enviados pelos discentes no formato padronizado.");
+                    writer.WriteLine($"Total de Arquivos: {files.Count}");
+                    writer.WriteLine("==========================================================");
                 }
 
-                var sample1 = archive.CreateEntry("Aluno_123456_Relatorio_Pratica_Acido_Base.pdf");
-                using (var entryStream = sample1.Open())
-                using (var writer = new StreamWriter(entryStream, Encoding.UTF8))
+                foreach (var f in files)
                 {
-                    writer.WriteLine("%PDF-1.4 Mock Solar LMS Delivery Content for Student 1");
-                }
-
-                var sample2 = archive.CreateEntry("Aluno_987654_Relatorio_Pratica_Acido_Base.pdf");
-                using (var entryStream = sample2.Open())
-                using (var writer = new StreamWriter(entryStream, Encoding.UTF8))
-                {
-                    writer.WriteLine("%PDF-1.4 Mock Solar LMS Delivery Content for Student 2");
+                    var studentName = f.User?.Name ?? f.User?.Username ?? $"Aluno_{f.UserId}";
+                    var entry = archive.CreateEntry($"{studentName}_{f.AttachmentFileName}");
+                    using var entryStream = entry.Open();
+                    using var writer = new StreamWriter(entryStream, Encoding.UTF8);
+                    writer.WriteLine(f.Note ?? $"Envio de {studentName}");
                 }
             }
 
@@ -207,6 +186,8 @@ public static class AssignmentEndpoints
             int id,
             SolarDbContext db) =>
         {
+            var materials = await db.SupportMaterialFiles.AsNoTracking().ToListAsync();
+
             var memoryStream = new MemoryStream();
             using (var archive = new ZipArchive(memoryStream, ZipArchiveMode.Create, leaveOpen: true))
             {
@@ -222,7 +203,15 @@ public static class AssignmentEndpoints
                 using (var s = entryGuide.Open())
                 using (var w = new StreamWriter(s, Encoding.UTF8))
                 {
-                    w.WriteLine("Guia prático de acompanhamento e prazos da disciplina no Solar LMS.");
+                    w.WriteLine("Guia prático de acompanhamento da disciplina no Solar LMS.");
+                }
+
+                foreach (var m in materials.Where(m => !string.IsNullOrEmpty(m.AttachmentFileName)))
+                {
+                    var entry = archive.CreateEntry(m.AttachmentFileName);
+                    using var s = entry.Open();
+                    using var w = new StreamWriter(s, Encoding.UTF8);
+                    w.WriteLine(m.Description ?? m.AttachmentFileName);
                 }
             }
 
