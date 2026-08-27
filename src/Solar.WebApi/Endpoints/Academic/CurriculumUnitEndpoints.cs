@@ -19,6 +19,7 @@ public static class CurriculumUnitEndpoints
                 try
                 {
                     var offers = await db.Offers
+                        .AsNoTracking()
                         .Include(o => o.CurriculumUnit)
                         .Include(o => o.Course)
                         .Include(o => o.Semester)
@@ -101,6 +102,7 @@ public static class CurriculumUnitEndpoints
                 try
                 {
                     var offer = await db.Offers
+                        .AsNoTracking()
                         .Include(o => o.CurriculumUnit)
                         .Include(o => o.Course)
                         .Include(o => o.Semester)

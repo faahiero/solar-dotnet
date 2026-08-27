@@ -30,6 +30,7 @@ public static class AdminGroupEndpoints
             int size = Math.Clamp(pageSize ?? 20, 1, 100);
 
             var query = db.Groups
+                .AsNoTracking()
                 .Include(g => g.Offer)
                 .AsQueryable();
 
@@ -84,6 +85,7 @@ public static class AdminGroupEndpoints
         group.MapGet("/api/v1/groups/{id}", async (long id, SolarDbContext db) =>
         {
             var groupEntity = await db.Groups
+                .AsNoTracking()
                 .Include(g => g.Offer)
                 .FirstOrDefaultAsync(g => g.Id == id);
 
@@ -224,6 +226,7 @@ public static class AdminGroupEndpoints
             int size = Math.Clamp(pageSize ?? 20, 1, 100);
 
             var query = db.Allocations
+                .AsNoTracking()
                 .Include(a => a.User)
                 .Include(a => a.Profile)
                 .Include(a => a.AllocationTag)
@@ -274,6 +277,7 @@ public static class AdminGroupEndpoints
         group.MapGet("/api/v1/allocations/{id}", async (long id, SolarDbContext db) =>
         {
             var allocation = await db.Allocations
+                .AsNoTracking()
                 .Include(a => a.User)
                 .Include(a => a.Profile)
                 .Include(a => a.AllocationTag)
