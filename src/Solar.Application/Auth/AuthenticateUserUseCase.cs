@@ -145,4 +145,22 @@ public class AuthenticateUserUseCase
             }
         };
     }
+
+    public async Task<Solar.Domain.Common.Result<LoginResponse>> ExecuteResultAsync(LoginRequest request, CancellationToken cancellationToken = default)
+    {
+        var response = await ExecuteAsync(request, cancellationToken);
+        if (!response.Success)
+        {
+            var msg = response.Message ?? "Usuário ou senha inválidos.";
+            if (msg.Contains("bloqueada", StringComparison.OrdinalIgnoreCase))
+            {
+                return Solar.Domain.Common.Result<LoginResponse>.Failure(
+                    Solar.Domain.Common.Error.Forbidden("Auth.AccountLocked", msg));
+            }
+            return Solar.Domain.Common.Result<LoginResponse>.Failure(
+                Solar.Domain.Common.Error.Unauthorized("Auth.InvalidCredentials", msg));
+        }
+
+        return Solar.Domain.Common.Result<LoginResponse>.Success(response);
+    }
 }
