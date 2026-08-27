@@ -15,7 +15,6 @@ public static class DiscussionEndpoints
         {
             var discussions = await db.Discussions
                 .AsNoTracking()
-                .Include(d => d.Posts)
                 .OrderByDescending(d => d.CreatedAt)
                 .ToListAsync();
 
@@ -25,6 +24,16 @@ public static class DiscussionEndpoints
                 .Where(aa => aa.AcademicToolType == "Discussion" && discIds.Contains(aa.AcademicToolId))
                 .ToListAsync();
 
+            var allocIds = academicAllocations.Select(aa => (long?)aa.Id).ToList();
+            var posts = await db.DiscussionPosts
+                .AsNoTracking()
+                .Where(p => p.AcademicAllocationId.HasValue && allocIds.Contains(p.AcademicAllocationId))
+                .ToListAsync();
+
+            var postsByAlloc = posts
+                .GroupBy(p => p.AcademicAllocationId!.Value)
+                .ToDictionary(g => g.Key, g => g.ToList());
+
             var allocMap = academicAllocations
                 .GroupBy(aa => aa.AcademicToolId)
                 .ToDictionary(g => g.Key, g => g.First());
@@ -32,6 +41,7 @@ public static class DiscussionEndpoints
             return Results.Ok(discussions.Select(d =>
             {
                 allocMap.TryGetValue(d.Id, out var aa);
+                var postList = aa != null && postsByAlloc.TryGetValue(aa.Id, out var pl) ? pl : [];
                 return new
                 {
                     d.Id,
@@ -43,8 +53,8 @@ public static class DiscussionEndpoints
                     FinalWeight = (double)(aa?.FinalWeight ?? 100),
                     CreatedAt = d.CreatedAt.ToString("dd/MM/yyyy HH:mm"),
                     UpdatedAt = d.UpdatedAt.ToString("dd/MM/yyyy HH:mm"),
-                    PostCount = d.Posts?.Count ?? 0,
-                    ParticipantCount = d.Posts?.Select(p => p.UserId).Distinct().Count() ?? 0
+                    PostCount = postList.Count,
+                    ParticipantCount = postList.Select(p => p.UserId).Distinct().Count()
                 };
             }));
         })

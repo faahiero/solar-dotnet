@@ -13,7 +13,7 @@ public static class LessonEndpoints
         // Aulas Didáticas (Consulta real no banco de dados)
         group.MapGet("/api/v1/lessons", async (SolarDbContext db) =>
         {
-            var lessons = await db.Lessons.AsNoTracking().Take(20).ToListAsync();
+            var lessons = await db.Lessons.AsNoTracking().OrderBy(l => l.Order).ThenBy(l => l.Id).Take(20).ToListAsync();
             return Results.Ok(lessons.Select(l => new
             {
                 l.Id,

@@ -11,6 +11,7 @@ public static class AcademicEndpoints
         group.MapDiscussionEndpoints();
         group.MapAssignmentEndpoints();
         group.MapCurriculumUnitEndpoints();
+        group.MapEditionEndpoints();
 
         return app;
     }

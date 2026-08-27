@@ -14,5 +14,4 @@ public class Discussion : IAuditableEntity
 
     // Navigation
     public Schedule? Schedule { get; set; }
-    public ICollection<DiscussionPost> Posts { get; set; } = [];
 }
