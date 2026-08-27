@@ -1,4 +1,5 @@
 using Solar.Domain.Assessments;
+using Solar.WebApi.Extensions;
 
 namespace Solar.WebApi.Endpoints;
 
@@ -8,8 +9,10 @@ public static class AssessmentEndpoints
 {
     public static IEndpointRouteBuilder MapAssessmentEndpoints(this IEndpointRouteBuilder app)
     {
+        var group = app.MapGroup("").RequireAuthorization();
+
         // Listagem de Provas Online da Disciplina
-        app.MapGet("/api/v1/curriculum-units/{id}/exams", () => Results.Ok(new[]
+        group.MapGet("/api/v1/curriculum-units/{id}/exams", () => Results.Ok(new[]
         {
             new
             {
@@ -29,7 +32,7 @@ public static class AssessmentEndpoints
         .WithSummary("Retorna as provas online da disciplina");
 
         // Iniciar Prova Online (Gera tentativa e ativa trava anti-fraude)
-        app.MapPost("/api/v1/curriculum-units/{id}/exams/{examId}/start", (int id, int examId) =>
+        group.MapPost("/api/v1/curriculum-units/{id}/exams/{examId}/start", (int id, int examId) =>
         {
             return Results.Ok(new
             {
@@ -84,34 +87,30 @@ public static class AssessmentEndpoints
         .WithName("StartExam")
         .WithSummary("Inicia a realização de uma prova online");
 
-        // Submissão e Correção Automática de Prova Online
-        app.MapPost("/api/v1/curriculum-units/{id}/exams/{examId}/submit", (
-            int id,
-            int examId,
+        // Submissão e Correção Automática de Prova Online via CQRS
+        group.MapPost("/api/v1/curriculum-units/{id}/exams/{examId}/submit", async (
+            long id,
+            long examId,
             ExamSubmissionRequest submission,
-            ExamScoringService scoringService) =>
+            Solar.Application.Common.Mediator.ISender sender) =>
         {
-            int correctCount = 0;
-            if (submission.Answers.TryGetValue(101, out int ans1) && ans1 == 1) correctCount++;
-            if (submission.Answers.TryGetValue(102, out int ans2) && ans2 == 5) correctCount++;
-            if (submission.Answers.TryGetValue(103, out int ans3) && ans3 == 9) correctCount++;
+            var responses = submission.Answers.Select(a =>
+                new Solar.Application.Assessments.Commands.StudentQuestionResponseItem(
+                    a.Key,
+                    new Dictionary<long, bool> { { a.Value, true } }
+                )).ToList();
 
-            double grade = (correctCount / 3.0) * 10.0;
+            var command = new Solar.Application.Assessments.Commands.SubmitExamAttemptCommand(
+                ExamId: examId,
+                UserId: 1, // Usuário autenticado
+                Responses: responses
+            );
 
-            return Results.Ok(new
-            {
-                Success = true,
-                ExamId = examId,
-                Score = Math.Round(grade, 1),
-                TotalQuestions = 3,
-                CorrectAnswers = correctCount,
-                Situation = grade >= 7.0 ? "Aprovado na Avaliação" : "Necessita Recuperação",
-                SubmittedAt = DateTime.UtcNow.ToString("dd/MM/yyyy HH:mm:ss"),
-                Message = "Prova finalizada e corrigida com sucesso! Trava anti-fraude desativada."
-            });
+            var result = await sender.Send(command);
+            return result.ToHttpResult();
         })
         .WithName("SubmitExam")
-        .WithSummary("Submete as respostas e calcula a nota da prova online");
+        .WithSummary("Submete as respostas e calcula a nota da prova online via CQRS");
 
         return app;
     }
