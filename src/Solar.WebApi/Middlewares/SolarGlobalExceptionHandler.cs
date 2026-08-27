@@ -32,11 +32,17 @@ public class SolarGlobalExceptionHandler : IExceptionHandler
             Type = "https://solar.virtual.ufc.br/errors/internal-server-error"
         };
 
+        var correlationId = httpContext.Request.Headers.TryGetValue("X-Correlation-ID", out var corrId) && !string.IsNullOrWhiteSpace(corrId)
+            ? corrId.ToString()
+            : httpContext.TraceIdentifier;
+
         problemDetails.Extensions["traceId"] = httpContext.TraceIdentifier;
+        problemDetails.Extensions["correlationId"] = correlationId;
         problemDetails.Extensions["timestamp"] = DateTime.UtcNow;
 
         httpContext.Response.StatusCode = StatusCodes.Status500InternalServerError;
         httpContext.Response.ContentType = "application/problem+json";
+        httpContext.Response.Headers["X-Correlation-ID"] = correlationId;
 
         await httpContext.Response.WriteAsJsonAsync(problemDetails, cancellationToken);
         return true;

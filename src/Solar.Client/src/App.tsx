@@ -1,15 +1,16 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, lazy, Suspense } from 'react';
 import type { UserProfile } from './types/auth';
 import { isAdminUser } from './types/auth';
 import type { CurriculumUnit } from './types/academic';
 import { LoginScreen } from './components/LoginScreen';
 import { Header } from './components/Header';
 import { MySolarHome } from './components/MySolarHome';
-import { CurriculumUnitView } from './components/CurriculumUnitView';
-import { MessagesView } from './components/MessagesView';
-import { AdminLogsView } from './components/AdminLogsView';
 import { OfficialFooter } from './components/OfficialFooter';
 import './index.css';
+
+const CurriculumUnitView = lazy(() => import('./components/CurriculumUnitView').then(m => ({ default: m.CurriculumUnitView })));
+const MessagesView = lazy(() => import('./components/MessagesView').then(m => ({ default: m.MessagesView })));
+const AdminLogsView = lazy(() => import('./components/AdminLogsView').then(m => ({ default: m.AdminLogsView })));
 
 interface OpenCourseTab {
   id: number;
@@ -99,36 +100,43 @@ export function App() {
 
       {/* 2. Área de Conteúdo Principal Dinâmica */}
       <main className="solar-page-content">
-        {activeTabKey === 'home' && (
-          <MySolarHome onOpenCurriculumUnit={handleOpenCurriculumUnit} />
-        )}
-
-        {activeCourse && (
-          <CurriculumUnitView
-            curriculumUnit={activeCourse.raw}
-            user={user}
-            onNavigateHome={() => setActiveTabKey('home')}
-          />
-        )}
-
-        {activeTabKey === 'messages' && (
-          <MessagesView user={user} />
-        )}
-
-        {activeTabKey === 'logs' && isAdminUser(user) && (
-          <AdminLogsView />
-        )}
-
-        {activeTabKey === 'enrollment' && (
-          <div className="solar-portlet-card" style={{ padding: '24px', textAlign: 'center' }}>
-            <h2 style={{ fontSize: '1.2rem', color: 'var(--solar-blue-dark)', marginBottom: '8px' }}>
-              Módulo de Matrícula Institucional (SIGAA Integrado)
-            </h2>
-            <p style={{ fontSize: '0.9rem', color: '#555' }}>
-              O período de solicitação de matrículas e ajuste de turmas para o semestre 2026.1 está regular.
-            </p>
+        <Suspense fallback={
+          <div className="p-12 text-center text-slate-500 font-medium animate-pulse flex flex-col items-center justify-center gap-3">
+            <div className="w-8 h-8 border-3 border-indigo-500 border-t-transparent rounded-full animate-spin"></div>
+            <span>Carregando módulo do Solar LMS...</span>
           </div>
-        )}
+        }>
+          {activeTabKey === 'home' && (
+            <MySolarHome onOpenCurriculumUnit={handleOpenCurriculumUnit} />
+          )}
+
+          {activeCourse && (
+            <CurriculumUnitView
+              curriculumUnit={activeCourse.raw}
+              user={user}
+              onNavigateHome={() => setActiveTabKey('home')}
+            />
+          )}
+
+          {activeTabKey === 'messages' && (
+            <MessagesView user={user} />
+          )}
+
+          {activeTabKey === 'logs' && isAdminUser(user) && (
+            <AdminLogsView />
+          )}
+
+          {activeTabKey === 'enrollment' && (
+            <div className="solar-portlet-card" style={{ padding: '24px', textAlign: 'center' }}>
+              <h2 style={{ fontSize: '1.2rem', color: 'var(--solar-blue-dark)', marginBottom: '8px' }}>
+                Módulo de Matrícula Institucional (SIGAA Integrado)
+              </h2>
+              <p style={{ fontSize: '0.9rem', color: '#555' }}>
+                O período de solicitação de matrículas e ajuste de turmas para o semestre 2026.1 está regular.
+              </p>
+            </div>
+          )}
+        </Suspense>
       </main>
 
       {/* 3. Rodapé Oficial Solar LMS */}

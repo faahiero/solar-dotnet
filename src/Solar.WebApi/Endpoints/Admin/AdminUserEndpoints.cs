@@ -86,7 +86,7 @@ public static class AdminUserEndpoints
             int currentPage = Math.Max(1, page ?? 1);
             int size = Math.Clamp(pageSize ?? 20, 1, 100);
 
-            var usersQuery = db.Users.AsQueryable();
+            var usersQuery = db.Users.AsNoTracking().AsQueryable();
 
             if (!string.IsNullOrWhiteSpace(query))
             {
@@ -139,6 +139,7 @@ public static class AdminUserEndpoints
         group.MapGet("/api/v1/admin/blacklist", async (SolarDbContext db) =>
         {
             var list = await db.UserBlacklists
+                .AsNoTracking()
                 .OrderByDescending(b => b.CreatedAt)
                 .Select(b => new
                 {

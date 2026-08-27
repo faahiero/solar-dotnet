@@ -24,8 +24,13 @@ class ApiClient {
     options: RequestInit = {}
   ): Promise<T> {
     const url = `${this.baseUrl}${endpoint}`;
+    const correlationId = typeof crypto !== 'undefined' && crypto.randomUUID 
+      ? crypto.randomUUID() 
+      : `${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
+
     const headers: Record<string, string> = {
       'Accept': 'application/json, application/problem+json',
+      'X-Correlation-ID': correlationId,
       ...(options.headers as Record<string, string>),
     };
 
@@ -40,7 +45,7 @@ class ApiClient {
     });
 
     if (response.status === 401) {
-      console.warn('[ApiClient] Sessão expirada ou não autorizada (401).');
+      console.warn(`[ApiClient] Sessão expirada ou não autorizada (401) [Trace: ${correlationId}].`);
     }
 
     if (!response.ok) {
