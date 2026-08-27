@@ -124,3 +124,69 @@ export interface AgendaData {
   activeDays: number[];
   events: AgendaEvent[];
 }
+
+export interface SharedMaterialItem {
+  id: number;
+  title: string;
+  author: string;
+  uploadedAt: string;
+  size: string;
+  type: string;
+  downloadUrl: string;
+  category: string;
+}
+
+export interface DigitalClassItem {
+  id: number;
+  title: string;
+  duration: string;
+  format: string;
+  status: string;
+  scormUrl: string;
+}
+
+export interface ProgramUnitTopic {
+  unit: string;
+  hours: number;
+  topics: string[];
+}
+
+export interface SyllabusInfo {
+  curriculumUnitId: number;
+  code: string;
+  name: string;
+  workingHours: number;
+  credits: number;
+  syllabus: string;
+  objectives: string[];
+  programContent: ProgramUnitTopic[];
+  methodology: string;
+  gradingCriteria: string;
+}
+
+export interface BibliographyBook {
+  id: number;
+  title: string;
+  authors: string;
+  edition: string;
+  year: number;
+  publisher: string;
+  availableOnline: boolean;
+  link?: string | null;
+}
+
+export interface BibliographyInfo {
+  curriculumUnitId: number;
+  basic: BibliographyBook[];
+  complementary: BibliographyBook[];
+}
+
+export interface AcademicEventItem {
+  id: number;
+  title: string;
+  date: string;
+  time: string;
+  location: string;
+  type: string;
+  instructor: string;
+}
