@@ -10,84 +10,73 @@ public static class LessonEndpoints
 {
     public static IEndpointRouteBuilder MapLessonEndpoints(this IEndpointRouteBuilder group)
     {
-        // Aulas Didáticas (Usado para validar liberação ou bloqueio por prova ativa)
-        group.MapGet("/api/v1/lessons", () => Results.Ok(new[]
+        // Aulas Didáticas (Consulta real no banco de dados)
+        group.MapGet("/api/v1/lessons", async (SolarDbContext db) =>
         {
-            new { Id = 1, Title = "Aula 1: Introdução ao Curso", Type = "File" },
-            new { Id = 2, Title = "Aula 2: Arquitetura de Sistemas", Type = "Link" }
-        }))
+            var lessons = await db.Lessons.AsNoTracking().Take(20).ToListAsync();
+            return Results.Ok(lessons.Select(l => new
+            {
+                l.Id,
+                Title = l.Name,
+                Type = l.TypeLesson == 1 ? "Link" : "File"
+            }));
+        })
         .CacheOutput("AcademicPolicy")
         .WithName("GetLessons")
-        .WithSummary("Retorna a lista de aulas da turma");
+        .WithSummary("Retorna a lista de aulas da turma do banco de dados");
 
-        // Aulas e Módulos Didáticos (Espelha 08_turma_aulas.png)
+        // Aulas e Módulos Didáticos (Consulta real no banco de dados)
         group.MapGet("/api/v1/curriculum-units/{id}/lessons", async (int id, SolarDbContext db) =>
         {
-            try
-            {
-                var lessons = await db.Lessons
-                    .Include(l => l.LessonModule)
-                    .OrderBy(l => l.Order)
-                    .ToListAsync();
+            var modules = await db.LessonModules
+                .AsNoTracking()
+                .Include(m => m.Lessons)
+                .OrderBy(m => m.Order)
+                .ToListAsync();
 
-                if (lessons.Any())
+            if (modules.Any())
+            {
+                return Results.Ok(modules.Select(m => new
                 {
-                    return Results.Ok(lessons.Select(l => new
+                    ModuleId = m.Id,
+                    ModuleName = m.Name,
+                    Lessons = m.Lessons.OrderBy(l => l.Order).Select(l => new
                     {
-                        l.Id,
+                        Id = l.Id,
                         Title = l.Name,
-                        l.Description,
-                        ModuleName = l.LessonModule != null ? l.LessonModule.Name : "Módulo 1",
-                        Type = l.TypeLesson == 1 ? "Link" : "Arquivo PDF",
-                        ContentUrl = l.Address,
-                        ReleaseDate = "10/08/2026",
-                        Position = l.Order
-                    }));
-                }
+                        Type = l.TypeLesson == 1 ? "Página Web (UFC)" : "Página Web / PDF",
+                        Viewed = false,
+                        NotesCount = 0
+                    })
+                }));
             }
-            catch { }
+
+            var lessons = await db.Lessons
+                .AsNoTracking()
+                .OrderBy(l => l.Order)
+                .ToListAsync();
 
             return Results.Ok(new[]
             {
                 new
                 {
-                    Id = 1,
-                    Title = "Aula 1 - Apresentação da Disciplina e Plano de Ensino",
-                    Description = "Visão geral da ementa, critérios de avaliação e cronograma semestral.",
-                    ModuleName = "Módulo 1: Fundamentos",
-                    Type = "Arquivo PDF",
-                    ContentUrl = "https://solar.virtual.ufc.br/materiais/plano_ensino.pdf",
-                    ReleaseDate = "10/08/2026",
-                    Position = 1
-                },
-                new
-                {
-                    Id = 2,
-                    Title = "Aula 2 - Estrutura Atômica e Tabela Periódica",
-                    Description = "Modelos atômicos, distribuição eletrônica e propriedades periódicas dos elementos.",
-                    ModuleName = "Módulo 1: Fundamentos",
-                    Type = "Vídeo-aula / Texto",
-                    ContentUrl = "https://solar.virtual.ufc.br/materiais/aula_02_video.mp4",
-                    ReleaseDate = "17/08/2026",
-                    Position = 2
-                },
-                new
-                {
-                    Id = 3,
-                    Title = "Aula 3 - Ligações Químicas e Forças Intermoleculares",
-                    Description = "Ligações iônicas, covalentes e metálicas. Geometria molecular.",
-                    ModuleName = "Módulo 2: Reatividade",
-                    Type = "Apresentação Interativa",
-                    ContentUrl = "https://solar.virtual.ufc.br/materiais/aula_03_slides.pdf",
-                    ReleaseDate = "24/08/2026",
-                    Position = 3
+                    ModuleId = 1L,
+                    ModuleName = "modulo 1",
+                    Lessons = lessons.Select(l => new
+                    {
+                        Id = l.Id,
+                        Title = l.Name,
+                        Type = l.TypeLesson == 1 ? "Página Web (UFC)" : "Página Web / PDF",
+                        Viewed = false,
+                        NotesCount = 0
+                    })
                 }
             });
         })
         .WithName("GetCurriculumUnitLessons")
-        .WithSummary("Retorna os módulos didáticos e aulas da disciplina");
+        .WithSummary("Retorna os módulos didáticos e aulas da disciplina do banco de dados");
 
-        // Criação de Nova Aula pelo Professor (Espelha lessons_controller#create)
+        // Criação de Nova Aula pelo Professor (Persistência real no banco)
         group.MapPost("/api/v1/curriculum-units/{id}/lessons", async (
             int id,
             CreateLessonRequest req,
@@ -115,8 +104,8 @@ public static class LessonEndpoints
             {
                 lesson.Id,
                 Title = lesson.Name,
-                ModuleName = req.ModuleName ?? "Módulo Geral",
-                Type = req.Type ?? "Arquivo PDF",
+                ModuleName = req.ModuleName ?? "modulo 1",
+                Type = req.Type ?? "Página Web (UFC)",
                 ContentUrl = lesson.Address,
                 ReleaseDate = DateTime.UtcNow.ToString("dd/MM/yyyy"),
                 Position = lesson.Order
