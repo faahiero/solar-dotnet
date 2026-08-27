@@ -30,7 +30,7 @@ public class ProductionHardeningTests : IClassFixture<WebApplicationFactory<Prog
     public async Task AdminMetrics_Endpoint_Should_Return_200_OK_With_Aggregated_Telemetry()
     {
         // Arrange
-        var client = _factory.CreateClient();
+        var client = _factory.CreateClient().AsAdmin();
 
         // Act
         var response = await client.GetAsync("/api/v1/admin/metrics");

@@ -13,6 +13,7 @@ using Solar.Domain.Enums;
 using Solar.Domain.Grading;
 using Solar.Infrastructure.Identity;
 using Solar.Infrastructure.Persistence;
+using Solar.WebApi.Endpoints;
 using Xunit;
 
 namespace Solar.WebApi.Tests;
@@ -158,7 +159,7 @@ public class WebApiIntegrationTests : IClassFixture<WebApplicationFactory<Progra
     public async Task Post_CalculateGrades_Should_Return_Correct_Grade_And_Situation()
     {
         // Arrange
-        var client = _factory.CreateClient();
+        var client = _factory.CreateClient().AsStudent();
 
         var command = new CalculateStudentGradesCommand
         {
@@ -217,8 +218,8 @@ public class WebApiIntegrationTests : IClassFixture<WebApplicationFactory<Progra
     public async Task ExamLockoutMiddleware_Should_Block_Access_To_Lessons_When_Student_Has_Active_Locked_Exam()
     {
         // Arrange
-        var client = _factory.CreateClient();
         long studentId = 999;
+        var client = _factory.CreateClient().AsStudent(studentId);
 
         using (var scope = _factory.Services.CreateScope())
         {
@@ -277,7 +278,7 @@ public class WebApiIntegrationTests : IClassFixture<WebApplicationFactory<Progra
     public async Task Get_Cached_Agenda_Should_Return_200_OK_And_Fast_Response()
     {
         // Arrange
-        var client = _factory.CreateClient();
+        var client = _factory.CreateClient().AsStudent();
 
         // Act
         var firstResponse = await client.GetAsync("/api/v1/agenda");
@@ -294,7 +295,7 @@ public class WebApiIntegrationTests : IClassFixture<WebApplicationFactory<Progra
     public async Task Get_Cached_Admin_Profiles_Should_Return_200_OK()
     {
         // Arrange
-        var client = _factory.CreateClient();
+        var client = _factory.CreateClient().AsAdmin();
 
         // Act
         var firstResponse = await client.GetAsync("/api/v1/admin/profiles");
@@ -312,7 +313,7 @@ public class WebApiIntegrationTests : IClassFixture<WebApplicationFactory<Progra
     public async Task Get_CurriculumUnits_With_AcceptEncoding_Gzip_Should_Return_Compressed_Response()
     {
         // Arrange
-        var client = _factory.CreateClient();
+        var client = _factory.CreateClient().AsStudent();
         var request = new HttpRequestMessage(HttpMethod.Get, "/api/v1/curriculum-units");
         request.Headers.Add("Accept-Encoding", "gzip");
 
@@ -408,6 +409,128 @@ public class WebApiIntegrationTests : IClassFixture<WebApplicationFactory<Progra
         response.StatusCode.Should().Be(HttpStatusCode.OK);
         var content = await response.Content.ReadAsStringAsync();
         content.Should().Contain("Sessão encerrada com sucesso");
+    }
+
+    [Fact]
+    public async Task Unauthenticated_Request_To_Admin_Endpoint_Should_Return_401_Unauthorized()
+    {
+        // Arrange (sem token)
+        var client = _factory.CreateClient();
+
+        // Act
+        var response = await client.GetAsync("/api/v1/admin/users");
+
+        // Assert
+        response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
+    }
+
+    [Fact]
+    public async Task Student_Request_To_Admin_Endpoint_Should_Return_403_Forbidden()
+    {
+        // Arrange (autenticado como aluno)
+        var client = _factory.CreateClient().AsStudent();
+
+        // Act
+        var response = await client.GetAsync("/api/v1/admin/users");
+
+        // Assert
+        response.StatusCode.Should().Be(HttpStatusCode.Forbidden);
+    }
+
+    [Fact]
+    public async Task Admin_Request_To_Admin_Endpoint_Should_Return_200_OK()
+    {
+        // Arrange (autenticado como admin)
+        var client = _factory.CreateClient().AsAdmin();
+
+        // Act
+        var response = await client.GetAsync("/api/v1/admin/users");
+
+        // Assert
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+    }
+
+    [Fact]
+    public async Task CreateGroup_WithInvalidPayload_Should_Return_400_ValidationProblemDetails_RFC7807()
+    {
+        // Arrange (OfferId = 0 é inválido)
+        var client = _factory.CreateClient().AsAdmin();
+        var invalidReq = new CreateGroupRequest(
+            OfferId: 0,
+            Code: "TURMA-INV",
+            Name: "",
+            Location: null,
+            Status: null,
+            Integrated: null,
+            MainGroupId: null,
+            DigitalClassDirectoryId: null
+        );
+
+        // Act
+        var response = await client.PostAsJsonAsync("/api/v1/groups", invalidReq);
+
+        // Assert: Deve retornar 400 com RFC 7807 ProblemDetails
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        var content = await response.Content.ReadAsStringAsync();
+        content.Should().Contain("errors");
+        content.Should().Contain("OfferId");
+    }
+
+    [Fact]
+    public async Task BulkUpdateGrades_Through_Mediator_Should_Return_200_OK()
+    {
+        // Arrange
+        var client = _factory.CreateClient().AsTeacher();
+        var request = new BulkUpdateGradesRequest(new List<StudentGradeUpdateItem>
+        {
+            new(StudentId: 10, PartialGrade: 8.5, FinalExamGrade: null, FrequencyHours: 56),
+            new(StudentId: 20, PartialGrade: 4.5, FinalExamGrade: 6.0, FrequencyHours: 60)
+        });
+
+        // Act
+        var response = await client.PostAsJsonAsync("/api/v1/curriculum-units/1/scores/bulk-update", request);
+
+        // Assert
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        var content = await response.Content.ReadAsStringAsync();
+        content.Should().Contain("processedCount");
+    }
+
+    [Fact]
+    public async Task SubmitExam_Through_Mediator_Should_Return_200_OK()
+    {
+        // Arrange
+        var client = _factory.CreateClient().AsStudent();
+        var request = new ExamSubmissionRequest(new Dictionary<int, int>
+        {
+            { 101, 1 },
+            { 102, 5 },
+            { 103, 9 }
+        });
+
+        // Act
+        var response = await client.PostAsJsonAsync("/api/v1/curriculum-units/1/exams/10/submit", request);
+
+        // Assert
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        var content = await response.Content.ReadAsStringAsync();
+        content.Should().Contain("attemptId");
+    }
+
+    [Fact]
+    public async Task Lgpd_ExportData_Should_Return_200_OK_With_ConsentAndPersonalData()
+    {
+        // Arrange
+        var client = _factory.CreateClient().AsStudent();
+
+        // Act
+        var response = await client.GetAsync("/api/v1/auth/lgpd/export-data");
+
+        // Assert
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        var content = await response.Content.ReadAsStringAsync();
+        content.Should().Contain("lgpdCompliance");
+        content.Should().Contain("personalData");
     }
 
     private record HealthResponse(string Status, string System, double MemoryUsageMB, string Uptime, DateTime Timestamp);

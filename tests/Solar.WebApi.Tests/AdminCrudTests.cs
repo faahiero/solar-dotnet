@@ -28,7 +28,7 @@ public class AdminCrudTests : IClassFixture<WebApplicationFactory<Program>>
     public async Task Groups_Crud_Flow_Should_Create_Get_Update_And_Delete_Successfully()
     {
         // Arrange
-        var client = _factory.CreateClient();
+        var client = _factory.CreateClient().AsAdmin();
         long offerId;
 
         using (var scope = _factory.Services.CreateScope())
@@ -98,7 +98,7 @@ public class AdminCrudTests : IClassFixture<WebApplicationFactory<Program>>
     public async Task Allocations_Crud_Flow_Should_Create_Get_Update_And_Delete_Successfully()
     {
         // Arrange
-        var client = _factory.CreateClient();
+        var client = _factory.CreateClient().AsAdmin();
         long userId;
         int profileId;
 
@@ -175,7 +175,7 @@ public class AdminCrudTests : IClassFixture<WebApplicationFactory<Program>>
     public async Task Semesters_Crud_Flow_Should_Create_Get_Update_And_Delete_Successfully()
     {
         // Arrange
-        var client = _factory.CreateClient();
+        var client = _factory.CreateClient().AsAdmin();
         string semesterName = $"2026.{Guid.NewGuid().ToString("N")[..4]}";
 
         // 1. Create Semester (POST)
@@ -215,7 +215,7 @@ public class AdminCrudTests : IClassFixture<WebApplicationFactory<Program>>
     public async Task Courses_Crud_Flow_Should_Create_Get_Update_And_Delete_Successfully()
     {
         // Arrange
-        var client = _factory.CreateClient();
+        var client = _factory.CreateClient().AsAdmin();
         string courseName = $"Curso Teste {Guid.NewGuid().ToString("N")[..6]}";
 
         // 1. Create Course (POST)
