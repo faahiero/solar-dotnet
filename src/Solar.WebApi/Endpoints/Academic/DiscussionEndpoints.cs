@@ -10,63 +10,46 @@ public static class DiscussionEndpoints
 {
     public static IEndpointRouteBuilder MapDiscussionEndpoints(this IEndpointRouteBuilder group)
     {
-        // Fóruns de Discussão da Disciplina (Espelha 10_turma_forum_discussoes.png)
+        // Fóruns de Discussão da Disciplina (Consulta real na tabela discussions e posts)
         group.MapGet("/api/v1/curriculum-units/{id}/discussions", async (int id, SolarDbContext db) =>
         {
-            try
-            {
-                var discussions = await db.Discussions
-                    .OrderByDescending(d => d.CreatedAt)
-                    .ToListAsync();
+            var discussions = await db.Discussions
+                .AsNoTracking()
+                .Include(d => d.Posts)
+                .OrderByDescending(d => d.CreatedAt)
+                .ToListAsync();
 
-                if (discussions.Any())
-                {
-                    return Results.Ok(discussions.Select(d => new
-                    {
-                        d.Id,
-                        Title = d.Name,
-                        d.Description,
-                        IsEvaluative = true,
-                        Weight = 2.0,
-                        StartDate = "10/08/2026",
-                        EndDate = "31/08/2026",
-                        PostCount = 5,
-                        ParticipantCount = 12
-                    }));
-                }
-            }
-            catch { }
+            var discIds = discussions.Select(d => d.Id).ToList();
+            var academicAllocations = await db.AcademicAllocations
+                .AsNoTracking()
+                .Where(aa => aa.AcademicToolType == "Discussion" && discIds.Contains(aa.AcademicToolId))
+                .ToListAsync();
 
-            return Results.Ok(new[]
+            var allocMap = academicAllocations
+                .GroupBy(aa => aa.AcademicToolId)
+                .ToDictionary(g => g.Key, g => g.First());
+
+            return Results.Ok(discussions.Select(d =>
             {
-                new
+                allocMap.TryGetValue(d.Id, out var aa);
+                return new
                 {
-                    Id = 1,
-                    Title = "Fórum Temático 1: Desafios da Educação a Distância",
-                    Description = "Espaço para debater metodologias ativas e o papel da autonomia do estudante na EaD.",
-                    IsEvaluative = true,
-                    Weight = 2.0,
-                    StartDate = "10/08/2026",
-                    EndDate = "31/08/2026",
-                    PostCount = 18,
-                    ParticipantCount = 14
-                },
-                new
-                {
-                    Id = 2,
-                    Title = "Fórum de Dúvidas Gerais do Módulo 1",
-                    Description = "Canal aberto com tutores e docentes para esclarecimento de conceitos da disciplina.",
-                    IsEvaluative = false,
-                    Weight = 0.0,
-                    StartDate = "10/08/2026",
-                    EndDate = "15/12/2026",
-                    PostCount = 7,
-                    ParticipantCount = 6
-                }
-            });
+                    d.Id,
+                    Title = d.Name,
+                    d.Description,
+                    IsEvaluative = aa?.Evaluative ?? false,
+                    IsFrequency = aa?.Frequency ?? false,
+                    Weight = (double)(aa?.Weight ?? 1),
+                    FinalWeight = (double)(aa?.FinalWeight ?? 100),
+                    CreatedAt = d.CreatedAt.ToString("dd/MM/yyyy HH:mm"),
+                    UpdatedAt = d.UpdatedAt.ToString("dd/MM/yyyy HH:mm"),
+                    PostCount = d.Posts?.Count ?? 0,
+                    ParticipantCount = d.Posts?.Select(p => p.UserId).Distinct().Count() ?? 0
+                };
+            }));
         })
         .WithName("GetCurriculumUnitDiscussions")
-        .WithSummary("Retorna os tópicos do fórum de discussão");
+        .WithSummary("Retorna os tópicos do fórum de discussão do banco de dados");
 
         // Criação de Fórum pelo Professor (Espelha discussions_controller#create)
         group.MapPost("/api/v1/curriculum-units/{id}/discussions", async (
@@ -97,8 +80,7 @@ public static class DiscussionEndpoints
                 discussion.Description,
                 IsEvaluative = req.IsEvaluative,
                 Weight = req.Weight ?? 1.0,
-                StartDate = DateTime.UtcNow.ToString("dd/MM/yyyy"),
-                EndDate = DateTime.UtcNow.AddDays(30).ToString("dd/MM/yyyy")
+                CreatedAt = discussion.CreatedAt.ToString("dd/MM/yyyy HH:mm")
             });
         })
         .WithName("CreateDiscussion")
