@@ -1,6 +1,8 @@
+using Solar.Domain.Common;
+
 namespace Solar.Domain.Entities;
 
-public class Discussion
+public class Discussion : IAuditableEntity
 {
     public long Id { get; set; }
     public string Name { get; set; } = string.Empty;

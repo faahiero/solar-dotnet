@@ -6,6 +6,7 @@ using Solar.Application.Integrations.Sigaa;
 using Solar.Domain.Entities;
 using Solar.Infrastructure.Identity;
 using Solar.Infrastructure.Persistence;
+using Solar.WebApi.Extensions;
 
 namespace Solar.WebApi.Endpoints;
 
@@ -15,31 +16,33 @@ public static class AuthEndpoints
 {
     public static IEndpointRouteBuilder MapAuthEndpoints(this IEndpointRouteBuilder app, IWebHostEnvironment environment)
     {
-        // Autenticação com suporte aos hashes legados Devise, Account Lockout e 2FA
-        app.MapPost("/api/v1/auth/login", async (
+        // Autenticação com suporte aos hashes legados Devise, Account Lockout e 2FA via CQRS
+        app.MapPost("/api/v1/auth/login", async Task<IResult> (
             LoginRequest request,
-            AuthenticateUserUseCase authUseCase,
+            Solar.Application.Common.Mediator.ISender sender,
             IJwtTokenService jwtTokenService,
             HttpContext httpContext) =>
         {
             var clientIp = httpContext.Connection.RemoteIpAddress?.ToString() ?? "127.0.0.1";
             var userAgent = httpContext.Request.Headers.UserAgent.ToString();
-            var enrichedRequest = request with { RemoteIp = clientIp };
-            var result = await authUseCase.ExecuteAsync(enrichedRequest);
+            var command = new Solar.Application.Auth.Commands.AuthenticateUserCommand(request.Login, request.Password, clientIp);
+            var result = await sender.Send(command);
 
-            if (!result.Success || result.User == null)
+            if (result.IsFailure || result.Value.User == null)
             {
-                return Results.BadRequest(new { Success = false, Message = result.Message ?? "Usuário ou senha inválidos." });
+                return result.ToHttpResult();
             }
+
+            var authResponse = result.Value;
 
             // Gera token JWT criptográfico amarrado com Device Fingerprint
             var userSummary = new UserSummaryDto(
-                Id: result.User.Id,
-                Username: result.User.Username,
-                Name: result.User.Name,
-                Email: result.User.Email,
-                Cpf: result.User.Cpf,
-                Role: result.User.ProfileTypes == 16 ? "admin" : result.User.ProfileTypes == 4 ? "teacher" : "student"
+                Id: authResponse.User.Id,
+                Username: authResponse.User.Username,
+                Name: authResponse.User.Name,
+                Email: authResponse.User.Email,
+                Cpf: authResponse.User.Cpf,
+                Role: authResponse.User.ProfileTypes == 16 ? "admin" : authResponse.User.ProfileTypes == 4 ? "teacher" : "student"
             );
             var tokenResponse = jwtTokenService.GenerateToken(userSummary, expirationSeconds: 86400, clientIp: clientIp, userAgent: userAgent);
             var token = tokenResponse.AccessToken;
@@ -54,7 +57,7 @@ public static class AuthEndpoints
                 Path = "/"
             });
 
-            var responseWithJwt = result with { Token = token };
+            var responseWithJwt = authResponse with { Token = token };
             return Results.Ok(responseWithJwt);
         })
         .RequireRateLimiting("AuthLimiter")
@@ -363,6 +366,80 @@ public static class AuthEndpoints
         })
         .WithName("OAuthToken")
         .WithSummary("Emite e renova tokens OAuth2/JWT para aplicativos e integrações");
+
+        // Exportação de Dados do Titular (Conformidade LGPD Art. 18 / ANPD)
+        app.MapGet("/api/v1/auth/lgpd/export-data", async (
+            HttpContext httpContext,
+            SolarDbContext db) =>
+        {
+            var userIdClaim = httpContext.User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+            long userId = long.TryParse(userIdClaim, out var id) ? id : 1;
+
+            var user = await db.Users
+                .Include(u => u.Allocations)
+                .FirstOrDefaultAsync(u => u.Id == userId);
+
+            if (user == null)
+            {
+                return Results.NotFound(new { error = "Usuário não encontrado." });
+            }
+
+            var exportPayload = new
+            {
+                LgpdCompliance = new
+                {
+                    Regulation = "Lei Geral de Proteção de Dados (Lei nº 13.709/2018)",
+                    Institution = "Universidade Federal do Ceará - UFC Virtual",
+                    ExportedAt = DateTime.UtcNow,
+                    TermsVersion = user.TermsVersion ?? "v2.0",
+                    TermsAcceptedAt = user.TermsAcceptedAt,
+                    ConsentIpAddress = user.TermsAcceptedIp
+                },
+                PersonalData = new
+                {
+                    user.Id,
+                    user.Name,
+                    user.Username,
+                    user.Email,
+                    user.Cpf,
+                    user.Telephone,
+                    user.CellPhone,
+                    user.Birthdate,
+                    user.City,
+                    user.State,
+                    user.Address,
+                    user.Zipcode,
+                    user.Institution,
+                    user.SpecialNeeds
+                },
+                AcademicAllocations = user.Allocations.Select(a => new
+                {
+                    a.Id,
+                    a.AllocationTagId,
+                    a.ProfileId,
+                    Status = a.Status.ToString(),
+                    a.ParcialGrade,
+                    a.FinalExamGrade,
+                    a.FinalGrade,
+                    a.WorkingHours,
+                    Situation = a.GradeSituation?.ToString(),
+                    a.CreatedAt
+                }),
+                AccessLogs = new
+                {
+                    user.SignInCount,
+                    user.CurrentSignInAt,
+                    user.LastSignInAt,
+                    user.CurrentSignInIp,
+                    user.LastSignInIp
+                }
+            };
+
+            return Results.Ok(exportPayload);
+        })
+        .RequireAuthorization()
+        .WithName("LgpdExportPersonalData")
+        .WithSummary("Exporta todos os dados cadastrais, histórico e registros de consentimento do titular (Conformidade LGPD)");
 
         return app;
     }

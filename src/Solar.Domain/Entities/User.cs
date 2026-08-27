@@ -1,8 +1,9 @@
+using Solar.Domain.Common;
 using Solar.Domain.Enums;
 
 namespace Solar.Domain.Entities;
 
-public class User
+public class User : IAuditableEntity
 {
     public long Id { get; set; }
     public string? Name { get; set; }

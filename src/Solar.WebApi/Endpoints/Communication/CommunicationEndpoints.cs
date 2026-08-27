@@ -13,8 +13,10 @@ public static class CommunicationEndpoints
 {
     public static IEndpointRouteBuilder MapCommunicationEndpoints(this IEndpointRouteBuilder app)
     {
+        var group = app.MapGroup("").RequireAuthorization();
+
         // Correio Eletrônico Interno (Espelha 03_mensagens_correio.png)
-        app.MapGet("/api/v1/messages", async (
+        group.MapGet("/api/v1/messages", async (
             string? folder,
             long? userId,
             string? filter,
@@ -110,7 +112,7 @@ public static class CommunicationEndpoints
         .WithSummary("Retorna mensagens do correio interno com contagem de não lidas e filtros");
 
         // Alteração de Status de Mensagens em Lote (Lida, Não Lida, Lixeira, Restaurar)
-        app.MapPut("/api/v1/messages/status", async (UpdateMessageStatusRequest req, SolarDbContext db) =>
+        group.MapPut("/api/v1/messages/status", async (UpdateMessageStatusRequest req, SolarDbContext db) =>
         {
             if (req.MessageIds == null || !req.MessageIds.Any())
             {
@@ -150,7 +152,7 @@ public static class CommunicationEndpoints
         .WithSummary("Altera o status de mensagens (lida, não lida, lixeira, restaurar) em lote");
 
         // Envio de Mensagem Direta
-        app.MapPost("/api/v1/messages", async (SendMessageRequest req, SolarDbContext db) =>
+        group.MapPost("/api/v1/messages", async (SendMessageRequest req, SolarDbContext db) =>
         {
             if (string.IsNullOrWhiteSpace(req.Subject) || string.IsNullOrWhiteSpace(req.Body))
             {
@@ -225,7 +227,7 @@ public static class CommunicationEndpoints
         .WithSummary("Envia uma nova mensagem no correio interno");
 
         // Catálogo / Seleção de Contatos para o Modal de Mensagens
-        app.MapGet("/api/v1/messages/contacts", async (
+        group.MapGet("/api/v1/messages/contacts", async (
             int? contactsType,
             int? roleType,
             long? userId,
@@ -350,7 +352,7 @@ public static class CommunicationEndpoints
         .WithSummary("Retorna os contatos do sistema com filtros por papel e disciplina para o modal de seleção");
 
         // Mapeamento do Hub SignalR de Chat
-        app.MapHub<ChatHub>("/hubs/chat");
+        group.MapHub<ChatHub>("/hubs/chat");
 
         return app;
     }

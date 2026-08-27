@@ -23,7 +23,7 @@ public class BatchFileDownloadTests : IClassFixture<WebApplicationFactory<Progra
     public async Task DownloadAssignmentSubmissionsZip_Should_Return_Valid_ZipArchive()
     {
         // Arrange
-        var client = _factory.CreateClient();
+        var client = _factory.CreateClient().AsStudent();
 
         // Act
         var response = await client.GetAsync("/api/v1/curriculum-units/1/assignments/1/download-all-zip");
@@ -51,7 +51,7 @@ public class BatchFileDownloadTests : IClassFixture<WebApplicationFactory<Progra
     public async Task DownloadCurriculumUnitMaterialsZip_Should_Return_Valid_ZipArchive_With_Syllabus()
     {
         // Arrange
-        var client = _factory.CreateClient();
+        var client = _factory.CreateClient().AsStudent();
 
         // Act
         var response = await client.GetAsync("/api/v1/curriculum-units/1/materials/download-zip");

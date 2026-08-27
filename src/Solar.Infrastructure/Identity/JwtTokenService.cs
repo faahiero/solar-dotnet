@@ -118,7 +118,7 @@ public class JwtTokenService : IJwtTokenService
         }
     }
 
-    public ClaimsPrincipal? ValidateToken(string token)
+    public async Task<ClaimsPrincipal?> ValidateTokenAsync(string token)
     {
         if (string.IsNullOrWhiteSpace(token) || IsTokenRevoked(token))
         {
@@ -141,7 +141,7 @@ public class JwtTokenService : IJwtTokenService
                 ClockSkew = TimeSpan.FromMinutes(1)
             };
 
-            var result = handler.ValidateTokenAsync(token, validationParameters).GetAwaiter().GetResult();
+            var result = await handler.ValidateTokenAsync(token, validationParameters);
             if (!result.IsValid)
             {
                 return null;
@@ -154,6 +154,11 @@ public class JwtTokenService : IJwtTokenService
         {
             return null;
         }
+    }
+
+    public ClaimsPrincipal? ValidateToken(string token)
+    {
+        return ValidateTokenAsync(token).ConfigureAwait(false).GetAwaiter().GetResult();
     }
 
     private static readonly ConcurrentDictionary<string, DateTime> _revokedTokens = new();

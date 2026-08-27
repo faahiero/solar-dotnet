@@ -8,8 +8,10 @@ public static class ReportEndpoints
 {
     public static IEndpointRouteBuilder MapReportEndpoints(this IEndpointRouteBuilder app)
     {
+        var group = app.MapGroup("").RequireAuthorization();
+
         // Emissão de Pauta Oficial de Notas em PDF (Espelha relatórios Prawn do Ruby)
-        app.MapGet("/api/v1/curriculum-units/{id}/reports/grades-pdf", async (
+        group.MapGet("/api/v1/curriculum-units/{id}/reports/grades-pdf", async (
             int id,
             SolarDbContext db,
             IAcademicReportService reportService) =>
@@ -52,7 +54,7 @@ public static class ReportEndpoints
         .WithSummary("Gera a pauta oficial de notas e situação da turma em formato PDF");
 
         // Emissão de Pauta de Frequência em PDF
-        app.MapGet("/api/v1/curriculum-units/{id}/reports/attendance-pdf", async (
+        group.MapGet("/api/v1/curriculum-units/{id}/reports/attendance-pdf", async (
             int id,
             SolarDbContext db,
             IAcademicReportService reportService) =>
