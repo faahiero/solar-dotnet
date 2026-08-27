@@ -1,8 +1,9 @@
+using Solar.Domain.Common;
 using Solar.Domain.Enums;
 
 namespace Solar.Domain.Entities;
 
-public class Allocation
+public class Allocation : IAuditableEntity
 {
     public long Id { get; set; }
     public long UserId { get; set; }

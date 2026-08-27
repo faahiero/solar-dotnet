@@ -1,6 +1,8 @@
+using Solar.Domain.Common;
+
 namespace Solar.Domain.Entities;
 
-public class UserBlacklist
+public class UserBlacklist : IAuditableEntity
 {
     public long Id { get; set; }
     public string Cpf { get; set; } = string.Empty;

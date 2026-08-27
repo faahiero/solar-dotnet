@@ -1,6 +1,8 @@
+using Solar.Domain.Common;
+
 namespace Solar.Domain.Entities;
 
-public class Group
+public class Group : IAuditableEntity
 {
     public long Id { get; set; }
     public long OfferId { get; set; }
