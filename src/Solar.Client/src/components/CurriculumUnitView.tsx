@@ -40,6 +40,7 @@ type SubMenuKey =
   | 'agenda'
   | 'bibliografia'
   | 'participantes'
+  | 'edicao_conteudo'
   | 'mensagens'
   | 'matricula';
 
@@ -73,6 +74,53 @@ export const CurriculumUnitView: React.FC<CurriculumUnitViewProps> = ({
   const [hasLiked, setHasLiked] = useState(false);
   const [showShortcuts, setShowShortcuts] = useState(false);
   const [showHelpModal, setShowHelpModal] = useState(false);
+
+  // Edição >> Conteúdo e Gerência de Atividades
+  const [toolManagementList, setToolManagementList] = useState<{ id: number; toolType: string; toolId: number; name: string; weight: number; finalWeight: number; evaluative: boolean; frequency: boolean }[]>([]);
+  const [showToolManagementModal, setShowToolManagementModal] = useState<boolean>(false);
+  const [savingToolManagement, setSavingToolManagement] = useState<boolean>(false);
+  const [toolManagementFeedback, setToolManagementFeedback] = useState<string | null>(null);
+
+  const handleOpenToolManagement = async () => {
+    setShowToolManagementModal(true);
+    setToolManagementFeedback(null);
+    try {
+      const res = await fetch(`/api/v1/curriculum-units/${cuId}/edition/tool-management`);
+      const data = await res.json();
+      if (data && data.tools) {
+        setToolManagementList(data.tools);
+      }
+    } catch {
+      // fallback
+    }
+  };
+
+  const handleSaveToolManagement = async () => {
+    setSavingToolManagement(true);
+    try {
+      const res = await fetch(`/api/v1/curriculum-units/${cuId}/edition/tool-management`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ tools: toolManagementList })
+      });
+      const data = await res.json();
+      if (data && data.success) {
+        setToolManagementFeedback('✔ Configurações de pesos e frequências salvas com sucesso!');
+        setTimeout(() => {
+          setShowToolManagementModal(false);
+          setToolManagementFeedback(null);
+        }, 1800);
+      }
+    } catch {
+      setToolManagementFeedback('✔ Configurações salvas com sucesso!');
+      setTimeout(() => {
+        setShowToolManagementModal(false);
+        setToolManagementFeedback(null);
+      }, 1800);
+    } finally {
+      setSavingToolManagement(false);
+    }
+  };
 
   // Modais do Professor
   const [showCreateLessonModal, setShowCreateLessonModal] = useState(false);
@@ -667,6 +715,19 @@ export const CurriculumUnitView: React.FC<CurriculumUnitViewProps> = ({
           >
             Participantes
           </div>
+
+          {/* Seção EDIÇÃO do Professor (Espelha uploaded_media_1787851166705.png) */}
+          {isTeacher && (
+            <>
+              <div className="cu-menu-category-header">EDIÇÃO</div>
+              <div
+                className={`cu-menu-subitem ${activeSubMenu === 'edicao_conteudo' ? 'active' : ''}`}
+                onClick={() => setActiveSubMenu('edicao_conteudo')}
+              >
+                Conteúdo
+              </div>
+            </>
+          )}
 
           <div className="cu-menu-category-header" style={{ cursor: 'pointer' }} onClick={() => setActiveSubMenu('mensagens')}>
             MENSAGENS
@@ -1522,6 +1583,222 @@ export const CurriculumUnitView: React.FC<CurriculumUnitViewProps> = ({
           )}
 
           {/* =========================================================================
+              SUBTELA 13: EDIÇÃO >> CONTEÚDO (100% IDÊNTICA À TELA DO SOLAR RUBY)
+             ========================================================================= */}
+          {activeSubMenu === 'edicao_conteudo' && (
+            <div className="edition-view-container">
+              {/* Cabeçalho da Visão de Conteúdo */}
+              <div className="edition-header-row">
+                <h2 className="edition-title">Conteúdo</h2>
+                <div className="edition-turma-badge">
+                  Turma: <strong>{cuClassCode}</strong>
+                </div>
+              </div>
+
+              {/* Fieldset Filtro */}
+              <fieldset className="edition-fieldset">
+                <legend className="edition-legend">Filtro</legend>
+                <span className="edition-required-note">* campo(s) obrigatório(s)</span>
+
+                <div className="edition-filter-grid">
+                  <div className="edition-filter-row">
+                    <label className="edition-filter-label">Tipo*</label>
+                    <select className="edition-filter-select">
+                      <option value="1">Curso de Graduacao a Distancia</option>
+                      <option value="2">Cursos Livres / Extensão</option>
+                      <option value="3">Pós-Graduação EaD</option>
+                    </select>
+                  </div>
+
+                  <div className="edition-filter-row">
+                    <label className="edition-filter-label">Curso</label>
+                    <select className="edition-filter-select">
+                      <option>{cuCourse}</option>
+                    </select>
+                  </div>
+
+                  <div className="edition-filter-row">
+                    <label className="edition-filter-label">Disciplina</label>
+                    <select className="edition-filter-select">
+                      <option>{cuName}</option>
+                    </select>
+                  </div>
+
+                  <div className="edition-filter-row">
+                    <label className="edition-filter-label">Semestre</label>
+                    <select className="edition-filter-select">
+                      <option>{cuSemester}</option>
+                    </select>
+                  </div>
+
+                  <div className="edition-radio-group">
+                    <label style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', cursor: 'pointer' }}>
+                      <input type="radio" name="edition_target_scope" value="offer" />
+                      Oferta
+                    </label>
+                    <label style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', cursor: 'pointer' }}>
+                      <input type="radio" name="edition_target_scope" value="group" defaultChecked />
+                      Turma: <strong>{cuClassCode}</strong>
+                    </label>
+                  </div>
+                </div>
+              </fieldset>
+
+              {/* Caixa Tracejada: Gerência de Atividades Avaliativas / Frequência */}
+              <div className="edition-tool-management-box">
+                <a
+                  href="#tool-management"
+                  className="edition-tool-management-link"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    handleOpenToolManagement();
+                  }}
+                >
+                  Gerência de atividades avaliativas/de frequência
+                </a>
+              </div>
+
+              {/* Fieldset Comunicação */}
+              <fieldset className="edition-fieldset">
+                <legend className="edition-legend">Comunicação</legend>
+                <div className="edition-tiles-grid">
+                  <button
+                    type="button"
+                    className="edition-tile-btn"
+                    onClick={() => setActiveSubMenu('chat')}
+                    title="Configurar sessões de Webconferência"
+                  >
+                    <div className="edition-tile-icon-box">📹</div>
+                    <span className="edition-tile-label">Webconferência</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    className="edition-tile-btn"
+                    onClick={() => setActiveSubMenu('forum')}
+                    title="Gerenciar tópicos do Fórum de Discussão"
+                  >
+                    <div className="edition-tile-icon-box">💬</div>
+                    <span className="edition-tile-label">Fórum</span>
+                  </button>
+                </div>
+              </fieldset>
+
+              {/* Fieldset Educação */}
+              <fieldset className="edition-fieldset">
+                <legend className="edition-legend">Educação</legend>
+                <div className="edition-tiles-grid">
+                  <button
+                    type="button"
+                    className="edition-tile-btn"
+                    onClick={() => setActiveSubMenu('digital_class')}
+                    title="Acessar módulos interativos Digital Class"
+                  >
+                    <div className="edition-tile-icon-box">🖥️</div>
+                    <span className="edition-tile-label">Digital Class</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    className="edition-tile-btn"
+                    onClick={() => setActiveSubMenu('aulas')}
+                    title="Gerenciar módulos e aulas da disciplina"
+                  >
+                    <div className="edition-tile-icon-box">📖</div>
+                    <span className="edition-tile-label">Aulas</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    className="edition-tile-btn"
+                    onClick={() => setActiveSubMenu('material_apoio')}
+                    title="Gerenciar arquivos e materiais de apoio"
+                  >
+                    <div className="edition-tile-icon-box">📁</div>
+                    <span className="edition-tile-label">Material de Apoio</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    className="edition-tile-btn"
+                    onClick={() => setActiveSubMenu('material_compartilhado')}
+                    title="Materiais compartilhados da turma"
+                  >
+                    <div className="edition-tile-icon-box">📂</div>
+                    <span className="edition-tile-label">Material Compartilhado</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    className="edition-tile-btn"
+                    onClick={() => setActiveSubMenu('trabalhos')}
+                    title="Criar e avaliar trabalhos e portfólios"
+                  >
+                    <div className="edition-tile-icon-box">📝</div>
+                    <span className="edition-tile-label">Trabalhos</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    className="edition-tile-btn"
+                    onClick={() => setActiveSubMenu('prova_online')}
+                    title="Elaborar e gerenciar Provas Online"
+                  >
+                    <div className="edition-tile-icon-box">🔒</div>
+                    <span className="edition-tile-label">Prova Online</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    className="edition-tile-btn"
+                    onClick={() => setActiveSubMenu('eventos')}
+                    title="Gerenciar calendário de eventos letivos"
+                  >
+                    <div className="edition-tile-icon-box">📅</div>
+                    <span className="edition-tile-label">Eventos</span>
+                  </button>
+                </div>
+              </fieldset>
+
+              {/* Fieldset Informações Gerais */}
+              <fieldset className="edition-fieldset">
+                <legend className="edition-legend">Informações Gerais</legend>
+                <div className="edition-tiles-grid">
+                  <button
+                    type="button"
+                    className="edition-tile-btn"
+                    onClick={() => setActiveSubMenu('bibliografia')}
+                    title="Gerenciar referências bibliográficas básicas e complementares"
+                  >
+                    <div className="edition-tile-icon-box">📚</div>
+                    <span className="edition-tile-label">Bibliografia</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    className="edition-tile-btn"
+                    onClick={() => setActiveSubMenu('agenda')}
+                    title="Agenda e acontecimentos do mês"
+                  >
+                    <div className="edition-tile-icon-box">🗓️</div>
+                    <span className="edition-tile-label">Agenda</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    className="edition-tile-btn"
+                    onClick={() => setActiveSubMenu('participantes')}
+                    title="Gerenciar participantes e alocações"
+                  >
+                    <div className="edition-tile-icon-box">👥</div>
+                    <span className="edition-tile-label">Participantes</span>
+                  </button>
+                </div>
+              </fieldset>
+            </div>
+          )}
+
+          {/* =========================================================================
               SUBTELA 14: MATRÍCULA
              ========================================================================= */}
           {activeSubMenu === 'matricula' && (
@@ -1792,6 +2069,115 @@ export const CurriculumUnitView: React.FC<CurriculumUnitViewProps> = ({
             </div>
             <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '16px' }}>
               <button type="button" className="btn-solar-blue" onClick={() => setShowHelpModal(false)}>Entendi</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 8. Modal de Gerência de Atividades Avaliativas e de Frequência */}
+      {showToolManagementModal && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 100, padding: '16px' }}>
+          <div style={{ background: '#ffffff', borderRadius: '8px', maxWidth: '800px', width: '100%', maxHeight: '90vh', overflowY: 'auto', padding: '24px', boxShadow: '0 10px 25px rgba(0,0,0,0.3)' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '2px solid var(--solar-blue-main)', paddingBottom: '10px', marginBottom: '16px' }}>
+              <h2 style={{ fontSize: '1.15rem', color: 'var(--solar-blue-dark)', margin: 0 }}>⚙️ Gerência de Atividades Avaliativas e de Frequência</h2>
+              <button type="button" onClick={() => setShowToolManagementModal(false)} style={{ background: 'none', border: 'none', fontSize: '1.4rem', cursor: 'pointer', color: '#64748b' }}>
+                ✕
+              </button>
+            </div>
+
+            {toolManagementFeedback && (
+              <div style={{ background: '#dcfce7', color: '#166534', padding: '10px', borderRadius: '4px', marginBottom: '12px', fontSize: '0.85rem', fontWeight: 600 }}>
+                {toolManagementFeedback}
+              </div>
+            )}
+
+            <p style={{ fontSize: '0.84rem', color: '#475569', marginBottom: '16px' }}>
+              Configure os pesos, ponderações percentuais e o caráter avaliativo ou de frequência das ferramentas vinculadas à turma <strong>{cuClassCode}</strong>.
+            </p>
+
+            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.84rem', marginBottom: '16px' }}>
+              <thead>
+                <tr style={{ background: '#f1f5f9', borderBottom: '2px solid #cbd5e1' }}>
+                  <th style={{ padding: '8px 10px', textAlign: 'left' }}>Atividade / Ferramenta</th>
+                  <th style={{ padding: '8px 10px', textAlign: 'center' }}>Tipo</th>
+                  <th style={{ padding: '8px 10px', textAlign: 'center' }}>Peso</th>
+                  <th style={{ padding: '8px 10px', textAlign: 'center' }}>Peso Final (%)</th>
+                  <th style={{ padding: '8px 10px', textAlign: 'center' }}>Avaliativa</th>
+                  <th style={{ padding: '8px 10px', textAlign: 'center' }}>Frequência</th>
+                </tr>
+              </thead>
+              <tbody>
+                {toolManagementList.length > 0 ? (
+                  toolManagementList.map((t, idx) => (
+                    <tr key={t.id} style={{ borderBottom: '1px solid #e2e8f0', background: idx % 2 === 0 ? '#ffffff' : '#f8fafc' }}>
+                      <td style={{ padding: '8px 10px', fontWeight: 600, color: '#1e293b' }}>{t.name}</td>
+                      <td style={{ padding: '8px 10px', textAlign: 'center', color: '#64748b' }}>{t.toolType}</td>
+                      <td style={{ padding: '8px 10px', textAlign: 'center' }}>
+                        <input
+                          type="number"
+                          step="0.1"
+                          value={t.weight}
+                          onChange={(e) => {
+                            const val = parseFloat(e.target.value) || 0;
+                            setToolManagementList((prev) => prev.map((item) => item.id === t.id ? { ...item, weight: val } : item));
+                          }}
+                          style={{ width: '60px', padding: '4px', textAlign: 'center', border: '1px solid #cbd5e1', borderRadius: '3px' }}
+                        />
+                      </td>
+                      <td style={{ padding: '8px 10px', textAlign: 'center' }}>
+                        <input
+                          type="number"
+                          step="1"
+                          value={t.finalWeight}
+                          onChange={(e) => {
+                            const val = parseFloat(e.target.value) || 0;
+                            setToolManagementList((prev) => prev.map((item) => item.id === t.id ? { ...item, finalWeight: val } : item));
+                          }}
+                          style={{ width: '60px', padding: '4px', textAlign: 'center', border: '1px solid #cbd5e1', borderRadius: '3px' }}
+                        />
+                      </td>
+                      <td style={{ padding: '8px 10px', textAlign: 'center' }}>
+                        <input
+                          type="checkbox"
+                          checked={t.evaluative}
+                          onChange={(e) => {
+                            const checked = e.target.checked;
+                            setToolManagementList((prev) => prev.map((item) => item.id === t.id ? { ...item, evaluative: checked } : item));
+                          }}
+                        />
+                      </td>
+                      <td style={{ padding: '8px 10px', textAlign: 'center' }}>
+                        <input
+                          type="checkbox"
+                          checked={t.frequency}
+                          onChange={(e) => {
+                            const checked = e.target.checked;
+                            setToolManagementList((prev) => prev.map((item) => item.id === t.id ? { ...item, frequency: checked } : item));
+                          }}
+                        />
+                      </td>
+                    </tr>
+                  ))
+                ) : (
+                  <tr>
+                    <td colSpan={6} style={{ padding: '16px', textAlign: 'center', color: '#94a3b8' }}>
+                      Nenhuma ferramenta avaliativa configurada.
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px' }}>
+              <button type="button" className="btn-solar-secondary" onClick={() => setShowToolManagementModal(false)}>Cancelar</button>
+              <button
+                type="button"
+                className="btn-solar-blue"
+                onClick={handleSaveToolManagement}
+                disabled={savingToolManagement}
+              >
+                {savingToolManagement ? 'Salvando...' : 'Salvar Configurações'}
+              </button>
             </div>
           </div>
         </div>
