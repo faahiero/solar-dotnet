@@ -36,7 +36,7 @@ export const Header = ({
       {/* 1. Topbar Azul Escuro */}
       <div className="solar-topbar-blue">
         <div className="solar-topbar-logo" onClick={() => onSelectTab('home')} style={{ cursor: 'pointer' }}>
-          <img src="/assets/images/solar_logo_small_cursos.png" alt="Solar Cursos" style={{ height: '32px' }} />
+          <img src="/assets/images/logo2.png" alt="Solar" style={{ height: '32px', width: 'auto' }} />
         </div>
 
         <div className="solar-topbar-right">

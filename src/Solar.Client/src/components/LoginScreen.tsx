@@ -197,7 +197,7 @@ export const LoginScreen = ({ onLoginSuccess }: LoginScreenProps) => {
       {/* 2. Container Central do Login / Cadastro */}
       <div className="login-central-wrapper">
         <div className="solar-brand-container">
-          <img src="/assets/images/solar_logo_small_cursos.png" alt="Solar Cursos" className="solar-cursos-logo" />
+          <img src="/assets/images/logo2.png" alt="Solar" className="solar-cursos-logo" />
           <h2 className="solar-subtitle">{t('solar_subtitle')}</h2>
         </div>
 
