@@ -54,7 +54,6 @@ public class SolarDbContext : DbContext, ISolarAuthDbContext, IBlacklistDbContex
     public DbSet<AssignmentFile> AssignmentFiles => Set<AssignmentFile>();
     public DbSet<GroupAssignment> GroupAssignments => Set<GroupAssignment>();
     public DbSet<GroupParticipant> GroupParticipants => Set<GroupParticipant>();
-    public DbSet<SubmissionComment> SubmissionComments => Set<SubmissionComment>();
 
     // Communication & Notifications
     public DbSet<Notification> Notifications => Set<Notification>();
@@ -808,19 +807,6 @@ public class SolarDbContext : DbContext, ISolarAuthDbContext, IBlacklistDbContex
                 .WithMany(g => g.Participants)
                 .HasForeignKey(e => e.GroupAssignmentId)
                 .OnDelete(DeleteBehavior.Cascade);
-        });
-
-        // SubmissionComments
-        modelBuilder.Entity<SubmissionComment>(entity =>
-        {
-            entity.ToTable("comments");
-            entity.HasKey(e => e.Id);
-            entity.Property(e => e.Id).HasColumnName("id");
-            entity.Property(e => e.AcademicAllocationUserId).HasColumnName("academic_allocation_user_id");
-            entity.Property(e => e.UserId).HasColumnName("user_id");
-            entity.Property(e => e.Description).HasColumnName("description").IsRequired();
-            entity.Property(e => e.CreatedAt).HasColumnName("created_at");
-            entity.Property(e => e.UpdatedAt).HasColumnName("updated_at");
         });
 
         // Notifications

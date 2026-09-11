@@ -58,6 +58,7 @@ public class GroupParticipant
     public User? User { get; set; }
 }
 
+[Obsolete("Utilize a entidade Comment de AuxiliaryAcademicEntities para interações com a tabela 'comments'.")]
 public class SubmissionComment
 {
     public long Id { get; set; }
