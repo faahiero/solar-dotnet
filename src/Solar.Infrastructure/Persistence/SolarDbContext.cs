@@ -168,13 +168,14 @@ public class SolarDbContext : DbContext, ISolarAuthDbContext, IBlacklistDbContex
         modelBuilder.Entity<Profile>(entity =>
         {
             entity.ToTable("profiles");
+            entity.HasKey(e => e.Id);
             entity.Property(e => e.Id).HasColumnName("id");
             entity.Property(e => e.Name).HasColumnName("name").HasMaxLength(255).IsRequired();
             entity.Property(e => e.Description).HasColumnName("description").HasMaxLength(500);
             entity.Property(e => e.Types).HasColumnName("types");
             entity.Property(e => e.Status).HasColumnName("status").HasDefaultValue(true);
-            entity.Ignore(e => e.CreatedAt);
-            entity.Ignore(e => e.UpdatedAt);
+            entity.Property(e => e.CreatedAt).HasColumnName("created_at");
+            entity.Property(e => e.UpdatedAt).HasColumnName("updated_at");
         });
 
         // Allocations

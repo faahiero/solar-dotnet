@@ -240,11 +240,11 @@ public static class WebApplicationExtensions
                 var existingProfileIds = db.Profiles.Select(p => p.Id).ToHashSet();
                 var defaultProfiles = new[]
                 {
-                    new Profile { Id = 1, Name = "student", Types = Solar.Domain.Enums.ProfileType.Student, Status = true, Description = "Aluno" },
-                    new Profile { Id = 2, Name = "tutor_distance", Types = Solar.Domain.Enums.ProfileType.ClassResponsible, Status = true, Description = "Tutor a Distância" },
-                    new Profile { Id = 3, Name = "tutor_presential", Types = Solar.Domain.Enums.ProfileType.Observer, Status = true, Description = "Tutor Presencial" },
-                    new Profile { Id = 4, Name = "teacher", Types = Solar.Domain.Enums.ProfileType.ClassResponsible, Status = true, Description = "Professor Titular" },
-                    new Profile { Id = 6, Name = "admin", Types = Solar.Domain.Enums.ProfileType.Admin, Status = true, Description = "Administrador" }
+                    new Profile { Id = 1, Name = "student", Types = Solar.Domain.Enums.ProfileType.Student, Status = true, Description = "Aluno", CreatedAt = DateTime.UtcNow, UpdatedAt = DateTime.UtcNow },
+                    new Profile { Id = 2, Name = "tutor_distance", Types = Solar.Domain.Enums.ProfileType.ClassResponsible, Status = true, Description = "Tutor a Distância", CreatedAt = DateTime.UtcNow, UpdatedAt = DateTime.UtcNow },
+                    new Profile { Id = 3, Name = "tutor_presential", Types = Solar.Domain.Enums.ProfileType.Observer, Status = true, Description = "Tutor Presencial", CreatedAt = DateTime.UtcNow, UpdatedAt = DateTime.UtcNow },
+                    new Profile { Id = 4, Name = "teacher", Types = Solar.Domain.Enums.ProfileType.ClassResponsible, Status = true, Description = "Professor Titular", CreatedAt = DateTime.UtcNow, UpdatedAt = DateTime.UtcNow },
+                    new Profile { Id = 6, Name = "admin", Types = Solar.Domain.Enums.ProfileType.Admin, Status = true, Description = "Administrador", CreatedAt = DateTime.UtcNow, UpdatedAt = DateTime.UtcNow }
                 };
                 foreach (var profile in defaultProfiles)
                 {
