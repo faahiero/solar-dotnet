@@ -175,6 +175,20 @@ public static class WebApplicationExtensions
                 db.SaveChanges();
             }
 
+            var schedule = db.Schedules.FirstOrDefault();
+            if (schedule == null)
+            {
+                schedule = new Schedule
+                {
+                    StartDate = DateOnly.FromDateTime(DateTime.UtcNow),
+                    EndDate = DateOnly.FromDateTime(DateTime.UtcNow.AddMonths(6)),
+                    CreatedAt = DateTime.UtcNow,
+                    UpdatedAt = DateTime.UtcNow
+                };
+                db.Schedules.Add(schedule);
+                db.SaveChanges();
+            }
+
             if (!db.CurriculumUnits.Any())
             {
                 var unitType = db.CurriculumUnitTypes.FirstOrDefault();
@@ -182,20 +196,6 @@ public static class WebApplicationExtensions
                 {
                     unitType = new CurriculumUnitType { Description = "Graduação a Distância", AllowsEnrollment = true, CreatedAt = DateTime.UtcNow, UpdatedAt = DateTime.UtcNow };
                     db.CurriculumUnitTypes.Add(unitType);
-                    db.SaveChanges();
-                }
-
-                var schedule = db.Schedules.FirstOrDefault();
-                if (schedule == null)
-                {
-                    schedule = new Schedule
-                    {
-                        StartDate = DateOnly.FromDateTime(DateTime.UtcNow),
-                        EndDate = DateOnly.FromDateTime(DateTime.UtcNow.AddMonths(6)),
-                        CreatedAt = DateTime.UtcNow,
-                        UpdatedAt = DateTime.UtcNow
-                    };
-                    db.Schedules.Add(schedule);
                     db.SaveChanges();
                 }
 
@@ -258,27 +258,63 @@ public static class WebApplicationExtensions
 
             if (!db.Discussions.Any())
             {
-                db.Discussions.Add(new Discussion { Name = "Fórum Temático 1", Description = "Debate sobre conceitos da disciplina", CreatedAt = DateTime.UtcNow, UpdatedAt = DateTime.UtcNow });
+                db.Discussions.Add(new Discussion
+                {
+                    Name = "Fórum Temático 1",
+                    Description = "Debate sobre conceitos da disciplina",
+                    ScheduleId = schedule.Id,
+                    CreatedAt = DateTime.UtcNow,
+                    UpdatedAt = DateTime.UtcNow
+                });
                 db.SaveChanges();
             }
 
             if (!db.Assignments.Any())
             {
-                db.Assignments.Add(new Assignment { Name = "Trabalho 1", Enunciation = "Atividade prática", CreatedAt = DateTime.UtcNow, UpdatedAt = DateTime.UtcNow });
+                db.Assignments.Add(new Assignment
+                {
+                    Name = "Trabalho 1",
+                    Enunciation = "Atividade prática",
+                    ScheduleId = schedule.Id,
+                    CreatedAt = DateTime.UtcNow,
+                    UpdatedAt = DateTime.UtcNow
+                });
                 db.SaveChanges();
             }
 
             if (!db.Exams.Any())
             {
-                var exam = new Exam { Name = "Prova Online 1", Description = "Avaliação oficial", BlockContent = true, CreatedAt = DateTime.UtcNow, UpdatedAt = DateTime.UtcNow };
-                var q1 = new Question { Enunciation = "Questão 1 de Avaliação", TypeQuestion = Solar.Domain.Enums.QuestionType.SingleChoice };
-                q1.QuestionItems.Add(new QuestionItem { Description = "Opção Correta", Value = true });
-                q1.QuestionItems.Add(new QuestionItem { Description = "Opção Incorreta", Value = false });
+                var defaultUser = db.Users.FirstOrDefault();
+                var exam = new Exam
+                {
+                    Name = "Prova Online 1",
+                    Description = "Avaliação oficial",
+                    BlockContent = true,
+                    ScheduleId = (int)schedule.Id,
+                    CreatedAt = DateTime.UtcNow,
+                    UpdatedAt = DateTime.UtcNow
+                };
+                var q1 = new Question
+                {
+                    Enunciation = "Questão 1 de Avaliação",
+                    TypeQuestion = Solar.Domain.Enums.QuestionType.SingleChoice,
+                    UserId = defaultUser?.Id ?? 1,
+                    CreatedAt = DateTime.UtcNow,
+                    UpdatedAt = DateTime.UtcNow
+                };
+                q1.QuestionItems.Add(new QuestionItem { Description = "Opção Correta", Value = true, CreatedAt = DateTime.UtcNow, UpdatedAt = DateTime.UtcNow });
+                q1.QuestionItems.Add(new QuestionItem { Description = "Opção Incorreta", Value = false, CreatedAt = DateTime.UtcNow, UpdatedAt = DateTime.UtcNow });
                 db.Exams.Add(exam);
                 db.Questions.Add(q1);
                 db.SaveChanges();
 
-                db.ExamQuestions.Add(new ExamQuestion { ExamId = exam.Id, QuestionId = q1.Id });
+                db.ExamQuestions.Add(new ExamQuestion
+                {
+                    ExamId = exam.Id,
+                    QuestionId = q1.Id,
+                    CreatedAt = DateTime.UtcNow,
+                    UpdatedAt = DateTime.UtcNow
+                });
                 db.SaveChanges();
             }
         }
