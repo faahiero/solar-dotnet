@@ -18,7 +18,8 @@ public static class WebApplicationExtensions
         // 0. Suporte a Proxy Reverso (Render, AWS, Nginx) para obter o IP real e protocolo HTTPS correto
         var forwardedHeadersOptions = new ForwardedHeadersOptions
         {
-            ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto
+            ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto,
+            ForwardLimit = null // Permite múltiplos saltos de proxy (Cloudflare -> Render -> Container)
         };
         forwardedHeadersOptions.KnownIPNetworks.Clear();
         forwardedHeadersOptions.KnownProxies.Clear();
@@ -31,6 +32,10 @@ public static class WebApplicationExtensions
         {
             app.UseHttpsRedirection();
         }
+
+        // Servir o painel web estático (wwwroot, assets, favicon) diretamente sem restrições
+        app.UseDefaultFiles();
+        app.UseStaticFiles();
 
         // Logging Estruturado de Requisições HTTP com Serilog
         app.UseSerilogRequestLogging(options =>
@@ -62,12 +67,6 @@ public static class WebApplicationExtensions
         // Cabeçalhos de Segurança HTTP Modernos (OWASP / MEC)
         app.UseMiddleware<SecurityHeadersMiddleware>();
 
-        // Proteção Criptográfica de Amarração de Dispositivo / IP (Device Fingerprint)
-        app.UseMiddleware<DeviceFingerprintMiddleware>();
-
-        // Suporte a Internacionalização (i18n): pt-BR e en-US
-        app.UseRequestLocalization();
-
         // Compressão Dinâmica de Resposta HTTP (Brotli/Gzip)
         app.UseResponseCompression();
 
@@ -77,9 +76,11 @@ public static class WebApplicationExtensions
         // Habilitar Output Caching para respostas HTTP em cache no servidor
         app.UseOutputCache();
 
-        // Servir o painel web interativo estático (wwwroot)
-        app.UseDefaultFiles();
-        app.UseStaticFiles();
+        // Suporte a Internacionalização (i18n): pt-BR e en-US
+        app.UseRequestLocalization();
+
+        // Proteção Criptográfica de Amarração de Dispositivo / IP (Device Fingerprint)
+        app.UseMiddleware<DeviceFingerprintMiddleware>();
 
         // Autenticação e Autorização Criptográfica (JWT Bearer + Cookies HttpOnly)
         app.UseAuthentication();
@@ -176,9 +177,17 @@ public static class WebApplicationExtensions
 
             if (!db.CurriculumUnits.Any())
             {
+                var unitType = db.CurriculumUnitTypes.FirstOrDefault();
+                if (unitType == null)
+                {
+                    unitType = new CurriculumUnitType { Description = "Graduação a Distância", AllowsEnrollment = true, CreatedAt = DateTime.UtcNow, UpdatedAt = DateTime.UtcNow };
+                    db.CurriculumUnitTypes.Add(unitType);
+                    db.SaveChanges();
+                }
+
                 var course = new Course { Name = "Licenciatura em Letras / Química", Code = "LETR-QUI", CreatedAt = DateTime.UtcNow, UpdatedAt = DateTime.UtcNow };
-                var cu1 = new CurriculumUnit { Name = "Introdução à Linguística", Code = "RM404", WorkingHours = 64, Syllabus = "Fundamentos da Linguística", CreatedAt = DateTime.UtcNow, UpdatedAt = DateTime.UtcNow };
-                var cu2 = new CurriculumUnit { Name = "Química Geral I", Code = "RM301", WorkingHours = 64, Syllabus = "Estrutura da Matéria e Reações Químicas", CreatedAt = DateTime.UtcNow, UpdatedAt = DateTime.UtcNow };
+                var cu1 = new CurriculumUnit { CurriculumUnitTypeId = unitType.Id, Name = "Introdução à Linguística", Code = "RM404", WorkingHours = 64, Syllabus = "Fundamentos da Linguística", CreatedAt = DateTime.UtcNow, UpdatedAt = DateTime.UtcNow };
+                var cu2 = new CurriculumUnit { CurriculumUnitTypeId = unitType.Id, Name = "Química Geral I", Code = "RM301", WorkingHours = 64, Syllabus = "Estrutura da Matéria e Reações Químicas", CreatedAt = DateTime.UtcNow, UpdatedAt = DateTime.UtcNow };
                 var semester = new Semester { Name = "2026.1", CreatedAt = DateTime.UtcNow, UpdatedAt = DateTime.UtcNow };
 
                 db.Courses.Add(course);

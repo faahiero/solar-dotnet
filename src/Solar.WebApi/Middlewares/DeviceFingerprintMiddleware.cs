@@ -24,8 +24,16 @@ public class DeviceFingerprintMiddleware
             token = cookieToken;
         }
 
-        // Requisições de encerramento de sessão (logout) sempre devem prosseguir para limpeza de cookies e revogação
-        if (context.Request.Path.StartsWithSegments("/api/v1/auth/logout", StringComparison.OrdinalIgnoreCase))
+        var path = context.Request.Path;
+        // Validação de fingerprint aplica-se apenas a rotas de API protegidas
+        if (!path.StartsWithSegments("/api", StringComparison.OrdinalIgnoreCase))
+        {
+            await _next(context);
+            return;
+        }
+
+        // Rotas públicas ou de auth (login, register, logout, recovery) prosseguem sem bloqueio de fingerprint
+        if (path.StartsWithSegments("/api/v1/auth", StringComparison.OrdinalIgnoreCase))
         {
             await _next(context);
             return;

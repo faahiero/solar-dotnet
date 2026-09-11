@@ -47,6 +47,10 @@ public class JwtTokenService : IJwtTokenService
         if (!string.IsNullOrEmpty(clientIp) || !string.IsNullOrEmpty(userAgent))
         {
             claims["dfp"] = ComputeFingerprint(clientIp, userAgent);
+            if (!string.IsNullOrEmpty(userAgent))
+            {
+                claims["uafp"] = ComputeUserAgentFingerprint(userAgent);
+            }
         }
 
         var descriptor = new SecurityTokenDescriptor
@@ -189,6 +193,13 @@ public class JwtTokenService : IJwtTokenService
     public static string ComputeFingerprint(string? clientIp, string? userAgent)
     {
         var raw = $"{clientIp?.Trim() ?? "unknown"}|{userAgent?.Trim() ?? "unknown"}";
+        var hash = SHA256.HashData(Encoding.UTF8.GetBytes(raw));
+        return Convert.ToHexString(hash).ToLowerInvariant()[..16];
+    }
+
+    public static string ComputeUserAgentFingerprint(string? userAgent)
+    {
+        var raw = userAgent?.Trim() ?? "unknown";
         var hash = SHA256.HashData(Encoding.UTF8.GetBytes(raw));
         return Convert.ToHexString(hash).ToLowerInvariant()[..16];
     }
