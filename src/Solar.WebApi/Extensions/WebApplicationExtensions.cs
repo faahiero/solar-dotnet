@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.EntityFrameworkCore;
 using Scalar.AspNetCore;
 using Serilog;
@@ -14,6 +15,15 @@ public static class WebApplicationExtensions
 {
     public static WebApplication UseSolarMiddlewarePipeline(this WebApplication app, IWebHostEnvironment environment)
     {
+        // 0. Suporte a Proxy Reverso (Render, AWS, Nginx) para obter o IP real e protocolo HTTPS correto
+        var forwardedHeadersOptions = new ForwardedHeadersOptions
+        {
+            ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto
+        };
+        forwardedHeadersOptions.KnownIPNetworks.Clear();
+        forwardedHeadersOptions.KnownProxies.Clear();
+        app.UseForwardedHeaders(forwardedHeadersOptions);
+
         // Tratamento Global Padronizado de Erros (RFC 7807)
         app.UseExceptionHandler();
 
@@ -185,13 +195,22 @@ public static class WebApplicationExtensions
 
             if (!db.Profiles.Any())
             {
-                db.Profiles.AddRange(
+                var existingProfileIds = db.Profiles.Select(p => p.Id).ToHashSet();
+                var defaultProfiles = new[]
+                {
                     new Profile { Id = 1, Name = "student", Types = Solar.Domain.Enums.ProfileType.Student, Status = true, Description = "Aluno" },
                     new Profile { Id = 2, Name = "tutor_distance", Types = Solar.Domain.Enums.ProfileType.ClassResponsible, Status = true, Description = "Tutor a Distância" },
                     new Profile { Id = 3, Name = "tutor_presential", Types = Solar.Domain.Enums.ProfileType.Observer, Status = true, Description = "Tutor Presencial" },
                     new Profile { Id = 4, Name = "teacher", Types = Solar.Domain.Enums.ProfileType.ClassResponsible, Status = true, Description = "Professor Titular" },
                     new Profile { Id = 6, Name = "admin", Types = Solar.Domain.Enums.ProfileType.Admin, Status = true, Description = "Administrador" }
-                );
+                };
+                foreach (var profile in defaultProfiles)
+                {
+                    if (!existingProfileIds.Contains(profile.Id))
+                    {
+                        db.Profiles.Add(profile);
+                    }
+                }
                 db.SaveChanges();
             }
 

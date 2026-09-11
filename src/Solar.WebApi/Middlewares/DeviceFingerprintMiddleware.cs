@@ -24,6 +24,13 @@ public class DeviceFingerprintMiddleware
             token = cookieToken;
         }
 
+        // Requisições de encerramento de sessão (logout) sempre devem prosseguir para limpeza de cookies e revogação
+        if (context.Request.Path.StartsWithSegments("/api/v1/auth/logout", StringComparison.OrdinalIgnoreCase))
+        {
+            await _next(context);
+            return;
+        }
+
         if (!string.IsNullOrEmpty(token))
         {
             if (jwtTokenService.IsTokenRevoked(token))
