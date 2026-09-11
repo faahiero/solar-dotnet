@@ -185,14 +185,47 @@ public static class WebApplicationExtensions
                     db.SaveChanges();
                 }
 
-                var course = new Course { Name = "Licenciatura em Letras / Química", Code = "LETR-QUI", CreatedAt = DateTime.UtcNow, UpdatedAt = DateTime.UtcNow };
+                var schedule = db.Schedules.FirstOrDefault();
+                if (schedule == null)
+                {
+                    schedule = new Schedule
+                    {
+                        StartDate = DateOnly.FromDateTime(DateTime.UtcNow),
+                        EndDate = DateOnly.FromDateTime(DateTime.UtcNow.AddMonths(6)),
+                        CreatedAt = DateTime.UtcNow,
+                        UpdatedAt = DateTime.UtcNow
+                    };
+                    db.Schedules.Add(schedule);
+                    db.SaveChanges();
+                }
+
+                var semester = db.Semesters.FirstOrDefault();
+                if (semester == null)
+                {
+                    semester = new Semester
+                    {
+                        Name = "2026.1",
+                        OfferScheduleId = schedule.Id,
+                        EnrollmentScheduleId = schedule.Id,
+                        CreatedAt = DateTime.UtcNow,
+                        UpdatedAt = DateTime.UtcNow
+                    };
+                    db.Semesters.Add(semester);
+                    db.SaveChanges();
+                }
+
+                var course = db.Courses.FirstOrDefault();
+                if (course == null)
+                {
+                    course = new Course { Name = "Licenciatura em Letras / Química", Code = "LETR-QUI", CreatedAt = DateTime.UtcNow, UpdatedAt = DateTime.UtcNow };
+                    db.Courses.Add(course);
+                    db.SaveChanges();
+                }
+
                 var cu1 = new CurriculumUnit { CurriculumUnitTypeId = unitType.Id, Name = "Introdução à Linguística", Code = "RM404", WorkingHours = 64, Syllabus = "Fundamentos da Linguística", CreatedAt = DateTime.UtcNow, UpdatedAt = DateTime.UtcNow };
                 var cu2 = new CurriculumUnit { CurriculumUnitTypeId = unitType.Id, Name = "Química Geral I", Code = "RM301", WorkingHours = 64, Syllabus = "Estrutura da Matéria e Reações Químicas", CreatedAt = DateTime.UtcNow, UpdatedAt = DateTime.UtcNow };
-                var semester = new Semester { Name = "2026.1", CreatedAt = DateTime.UtcNow, UpdatedAt = DateTime.UtcNow };
 
-                db.Courses.Add(course);
                 db.CurriculumUnits.AddRange(cu1, cu2);
-                db.Semesters.Add(semester);
                 db.SaveChanges();
 
                 db.Offers.AddRange(
