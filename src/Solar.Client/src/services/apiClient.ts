@@ -34,6 +34,11 @@ class ApiClient {
       ...(options.headers as Record<string, string>),
     };
 
+    const token = typeof localStorage !== 'undefined' ? localStorage.getItem('solar_session_token') : null;
+    if (token && !headers['Authorization']) {
+      headers['Authorization'] = `Bearer ${token}`;
+    }
+
     if (!(options.body instanceof FormData) && !headers['Content-Type']) {
       headers['Content-Type'] = 'application/json';
     }

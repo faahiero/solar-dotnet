@@ -52,7 +52,7 @@ public static class AuthEndpoints
             {
                 HttpOnly = true,
                 Secure = !environment.IsDevelopment(),
-                SameSite = SameSiteMode.Strict,
+                SameSite = SameSiteMode.Lax,
                 Expires = DateTimeOffset.UtcNow.AddHours(24),
                 Path = "/"
             });
@@ -73,7 +73,7 @@ public static class AuthEndpoints
             {
                 Path = "/",
                 HttpOnly = true,
-                SameSite = SameSiteMode.Strict
+                SameSite = SameSiteMode.Lax
             });
 
             string? token = null;
@@ -199,7 +199,7 @@ public static class AuthEndpoints
             {
                 HttpOnly = true,
                 Secure = !environment.IsDevelopment(),
-                SameSite = SameSiteMode.Strict,
+                SameSite = SameSiteMode.Lax,
                 Expires = DateTimeOffset.UtcNow.AddDays(1),
                 Path = "/"
             });
@@ -254,7 +254,7 @@ public static class AuthEndpoints
             {
                 HttpOnly = true,
                 Secure = !environment.IsDevelopment(),
-                SameSite = SameSiteMode.Strict,
+                SameSite = SameSiteMode.Lax,
                 Expires = DateTimeOffset.UtcNow.AddDays(1),
                 Path = "/"
             });
